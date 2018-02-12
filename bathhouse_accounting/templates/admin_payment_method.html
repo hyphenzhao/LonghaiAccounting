@@ -1,0 +1,64 @@
+{% extends "admin_base.html" %}
+{% load staticfiles %}
+{% block content %}
+<div class="container" style="background-color: white; padding: 20px;">
+	<div class="row" style="padding: 20px;">
+		<div class="col-6">
+			<h3>付款方式</h3>
+		</div>
+		<table class="table">
+			<thead>
+				<td>编号</td>
+				<td>付款方式名称</td>
+				<td>是否计入真实收入</td>
+				<td>操作</td>
+			</thead>
+			<tbody>
+				{% for i in record %}
+				<tr>
+					<td>{{i.id}}</td>
+					<td>{{i.name}}</td>
+					{% if i.real_income %}
+					<td>是</td>
+					{% else %}
+					<td>否</td>
+					{% endif %}
+					<td>
+						<form id="form_{{i.id}}"style="width: 100%;" action="/accounting/administrator/payment-method/" method="POST">
+						{% csrf_token %} 
+							<input type="hidden" id="payment_no" name="payment_no" value="{{i.id}}" />
+							<button class='btn btn-danger' name="delete_element" onclick="delete_element_method('form_{{i.id}}')">删除</button>
+						</form>
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	<div class="row" style="padding: 20px;">
+		<div class="col-6">
+			<h3>预编入付款方式</h3>
+		</div>
+		<div class="col-6 text-right">
+			<button class="btn btn-primary" onclick="add_new_payment_method()">+添加</button>
+		</div>
+		<form style="width: 100%;" action="/accounting/administrator/payment-method/" method="POST">
+		{% csrf_token %} 
+		<table class="table">
+			<thead>
+				<td>编号</td>
+				<td>付款方式名称</td>
+				<td>是否计入真实收入</td>
+				<td>操作</td>
+			</thead>
+			<tbody id="ready-add-table">
+			</tbody>
+		</table>
+		<input type="hidden" id="index_number" name="index_number" value="1" />
+		<div class="col-12 text-center">
+			<button class='btn btn-success' name="add_element">确认添加</button>
+		</div>
+		</form>
+	</div>
+</div>
+{% endblock %}

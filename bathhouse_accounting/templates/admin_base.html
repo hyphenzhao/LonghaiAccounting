@@ -1,0 +1,64 @@
+{% load staticfiles %}
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>浴池收费系统 - 管理员</title>
+		<link href="{% static 'css/bootstrap.css' %}" rel="stylesheet">
+		<link href="{% static 'css/accounting.css' %}" rel="stylesheet">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+		<script src="{%static 'js/bootstrap.min.js'%}"></script>
+		<script src="{%static 'js/validator.min.js'%}"></script>
+		<script src="{%static 'js/admin.js'%}"></script>
+	</head>
+	<body>
+		<div class="container">
+			<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    			<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+      				<span class="navbar-toggler-icon"></span>
+    			</button>
+    			<div class="collapse navbar-collapse" id="navbarColor01">
+    				<ul class="navbar-nav mr-auto">
+    					{%if tag == "bill" %}
+        				<li class="nav-item active">
+        				{%else%}
+        				<li class="nav-item">
+        				{%endif%}
+        					<a class="nav-link" href="/accounting/administrator/bill/">账目管理</a>
+        				</li>
+        				{%if tag == "service" %}
+        				<li class="nav-item active">
+        				{%else%}
+        				<li class="nav-item">
+        				{%endif%}
+        					<a class="nav-link" href="/accounting/administrator/service/">服务管理</a>
+        				</li>
+        				{%if tag == "staff" %}
+        				<li class="nav-item active">
+        				{%else%}
+        				<li class="nav-item">
+        				{%endif%}
+        					<a class="nav-link" href="/accounting/administrator/member/">人员管理</a>
+        				</li>
+        				{%if tag == "payment" %}
+        				<li class="nav-item active">
+        				{%else%}
+        				<li class="nav-item">
+        				{%endif%}
+        					<a class="nav-link" href="/accounting/administrator/payment-method/">付款方式</a>
+        				</li>
+        				{%if tag == "vip" %}
+        				<li class="nav-item active">
+        				{%else%}
+        				<li class="nav-item">
+        				{%endif%}
+        					<a class="nav-link" href="#">会员管理</a>
+        				</li>
+      				</ul>
+    			</div>
+  			</nav>
+  			{% block content %}
+			{% endblock %}
+		</div>
+	</body>
+</html>

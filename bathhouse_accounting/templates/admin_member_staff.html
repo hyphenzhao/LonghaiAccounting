@@ -1,0 +1,73 @@
+{% extends "admin_member_base.html" %}
+{% load staticfiles %}
+{% block content %}
+<script type="text/javascript">
+	var options_innerHTML = {% for i in jobs%}"<option value='{{i.id}}' priviledge='{{i.priviledge}}'>{{i.name}}</option>" + {% endfor %} "";
+</script>
+<div class="container" style="background-color: white; padding: 20px;">
+	<div class="row" style="padding: 20px;">
+		<div class="col-6">
+			<h3>职工管理</h3>
+		</div>
+		<table class="table">
+			<thead>
+				<td>编号</td>
+				<td>姓名</td>
+				<td>性别</td>
+				<td>工种</td>
+				<td>薪资</td>
+				<td>操作</td>
+			</thead>
+			<tbody>
+				{% for i in record %}
+				<tr>
+					<td>{{i.id}}</td>
+					<td>{{i.name}}</td>
+					{% if i.gender%}
+					<td>女</td>
+					{% else %}
+					<td>男</td>
+					{% endif %}
+					<td>{{i.title.name}}</td>
+					<td>{{i.salary}}</td>
+					<td>
+						<form id="form_{{i.id}}"style="width: 100%;" action="/accounting/administrator/member/staff/" method="POST">
+						{% csrf_token %} 
+							<input type="hidden" id="staff_no" name="staff_no" value="{{i.id}}" />
+							<button class='btn btn-danger' name="delete_element" onclick="delete_element_method('form_{{i.id}}')">删除</button>
+						</form>
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	<div class="row" style="padding: 20px;">
+		<div class="col-6">
+			<h3>预编入职工</h3>
+		</div>
+		<div class="col-6 text-right">
+			<button class="btn btn-primary" onclick="add_new_staff()">+添加</button>
+		</div>
+		<form style="width: 100%;" action="/accounting/administrator/member/staff/" method="POST">
+		{% csrf_token %} 
+		<table class="table">
+			<thead>
+				<td>编号</td>
+				<td>姓名</td>
+				<td>性别</td>
+				<td>工种</td>
+				<td>薪资</td>
+				<td>操作</td>
+			</thead>
+			<tbody id="ready-add-table">
+			</tbody>
+		</table>
+		<input type="hidden" id="index_number" name="index_number" value="1" />
+		<div class="col-12 text-center">
+			<button class='btn btn-success' name="add_element">确认添加</button>
+		</div>
+		</form>
+	</div>
+</div>
+{% endblock %}

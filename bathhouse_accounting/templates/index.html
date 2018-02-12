@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+	<body>
+		{% block content %}
+		<div class="container" style="padding-top: 15%">
+		<div class="card text-center">
+  			<div class="card-header">
+    			<h2> 龙海浴池收费记账系统 </h2>
+  			</div>	
+  			<div class="card-body container">
+          {%if message != ""%}
+            <div class="alert alert-danger" role="alert">{{message}}</div>
+          {%endif%}
+    			<form method="POST" action="{% url 'index' %}">
+    				{% csrf_token %} 
+    				<div class="form-group row">
+    					<label for="inputEmail3" class="col-sm-2 col-form-label">用户名</label>
+    					<div class="col-sm-10">
+    						<input type="input" class="form-control" id="inputEmail3" name="username" placeholder="用户名">
+    					</div>
+    				</div>
+    				<div class="form-group row">
+      					<label for="inputPassword3" class="col-sm-2 col-form-label">密码</label>
+      					<div class="col-sm-10">
+        					<input type="password" class="form-control" id="inputPassword3" name="password" placeholder="密码">
+      					</div>
+   	 				</div>
+    				<button type="submit" class="btn btn-warning">登陆</button>
+    			</form>
+  			</div>
+  			<div class="card-footer text-muted">
+    			@Copyright 龙海浴池
+  			</div>
+		</div>
+		</div>
+		{% endblock %}
+	</body>

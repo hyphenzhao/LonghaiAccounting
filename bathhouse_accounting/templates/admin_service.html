@@ -1,0 +1,66 @@
+{% extends "admin_base.html" %}
+{% load staticfiles %}
+{% block content %}
+<div class="container" style="background-color: white; padding: 20px;">
+	<div class="row" style="padding: 20px;">
+		<div class="col-6">
+			<h3>服务项目管理</h3>
+		</div>
+		<table class="table">
+			<thead>
+				<td>编号</td>
+				<td>服务项目名称</td>
+				<td>价格</td>
+				<td>物资成本</td>
+				<td>人工提成</td>
+				<td>操作</td>
+			</thead>
+			<tbody>
+				{% for i in record %}
+				<tr>
+					<td>{{i.id}}</td>
+					<td>{{i.name}}</td>
+					<td>{{i.price|floatformat}}</td>
+					<td>{{i.cost|floatformat}}</td>
+					<td>{{i.promote_ratio|floatformat}}</td>
+					<td>
+						<form id="form_{{i.id}}"style="width: 100%;" action="/accounting/administrator/service/" method="POST">
+						{% csrf_token %} 
+							<input type="hidden" id="item_no" name="item_no" value="{{i.id}}" />
+							<button class='btn btn-danger' name="delete_element" onclick="delete_element_method('form_{{i.id}}')">删除</button>
+						</form>
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	<div class="row" style="padding: 20px;">
+		<div class="col-6">
+			<h3>预编入服务项目</h3>
+		</div>
+		<div class="col-6 text-right">
+			<button class="btn btn-primary" onclick="add_new_service_item()">+添加</button>
+		</div>
+		<form style="width: 100%;" action="/accounting/administrator/service/" method="POST">
+		{% csrf_token %} 
+		<table class="table">
+			<thead>
+				<td>编号</td>
+				<td>服务项目名称</td>
+				<td>价格</td>
+				<td>物资成本</td>
+				<td>人工提成比例</td>
+				<td>操作</td>
+			</thead>
+			<tbody id="ready-add-table">
+			</tbody>
+		</table>
+		<input type="hidden" id="index_number" name="index_number" value="1" />
+		<div class="col-12 text-center">
+			<button class='btn btn-success' name="add_element">确认添加</button>
+		</div>
+		</form>
+	</div>
+</div>
+{% endblock %}
