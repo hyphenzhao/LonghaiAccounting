@@ -1,22 +1,4 @@
 var index = 1;
-function delete_element_method(form_id) {
-	var msg = "您确定要删除吗？删除以后数据不可恢复。\n\n请确认。";
-	if (confirm(msg)==true){
-		form = document.getElementById(form_id);
-		form.submit();
-	}else{
-		return ;
-	}
-}
-function update_element_method(form_id) {
-	var msg = "您确定要更改吗？更改后用户名和密码都将被覆盖。\n\n请确认。";
-	if (confirm(msg)==true){
-		form = document.getElementById(form_id);
-		form.submit();
-	}else{
-		return ;
-	}
-}
 function add_new_service_item() {
 	var ready_add_table = document.getElementById("ready-add-table");
 	var new_row = document.createElement("tr");
@@ -28,6 +10,22 @@ function add_new_service_item() {
 							"<td><input type='input' class='form-control' name='new_service_cost_"+ index +"' required /></td>"+
 							"<td><input type='input' class='form-control' name='new_service_ratio_"+ index +"' required /></td>"+
 							"<td><button class='btn btn-danger' onclick=\"delete_element_by_id(\'new_service_row_" + index + "\')\">删除</button></td>";
+	new_row.innerHTML = new_row_innerHTML;
+	ready_add_table.appendChild(new_row);
+	index++;
+	document.getElementById("index_number").value = index;
+}
+function add_new_vip() {
+	var ready_add_table = document.getElementById("ready-add-table");
+	var new_row = document.createElement("tr");
+	var new_row_id = "new_vip_row_" + index;
+	new_row.setAttribute("id", new_row_id);
+	var new_row_innerHTML = "<td>自动</td>" +
+							"<td><input type='input' class='form-control' name='new_vip_card_"+ index +"' required  /></td>"+
+							"<td><input type='input' class='form-control' name='new_vip_name_"+ index +"' /></td>"+
+							"<td><input type='input' class='form-control' name='new_vip_phone_"+ index +"' /></td>"+
+							"<td><input type='input' class='form-control' name='new_vip_balance_"+ index +"' value=\"0\" /></td>"+
+							"<td><button class='btn btn-danger' onclick=\"delete_element_by_id(\'new_vip_row_" + index + "\')\">删除</button></td>";
 	new_row.innerHTML = new_row_innerHTML;
 	ready_add_table.appendChild(new_row);
 	index++;
@@ -128,8 +126,4 @@ function add_new_staff() {
 	ready_add_table.appendChild(new_row);
 	index++;
 	document.getElementById("index_number").value = index;
-}
-function delete_element_by_id(id) {
-	var thisNode=document.getElementById(id);
-	thisNode.parentNode.removeChild(thisNode);
 }

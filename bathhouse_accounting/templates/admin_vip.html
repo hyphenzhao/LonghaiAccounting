@@ -1,0 +1,82 @@
+{% extends "admin_base.html" %}
+{% load staticfiles %}
+{% block content %}
+<div class="container" style="background-color: white; padding: 20px;">
+	<div class="row" style="padding: 20px;">
+		<form action="/accounting/administrator/VIP/methods/" method="POST">
+			{% csrf_token %}
+			<label for="payment_method">VIP绑定支付方式：</label>
+			<select class="custom-select" id="payment_method" name="payment_method">
+				{% for i in methods %}
+				<option value="{{i.id}}" {% if current_method.payment.id == i.id %} selected="selected"{% endif %}>
+					{{i.name}}
+				</option>
+				{% endfor %}
+			</select>
+			<button class="btn btn-success">更新绑定</button>
+		</form>
+	</div>
+	<div class="row" style="padding: 20px;">
+		<div class="col-6">
+			<h3>会员管理</h3>
+		</div>
+		<table class="table">
+			<thead>
+				<td>编号</td>
+				<td>卡号</td>
+				<td>姓名</td>
+				<td>联系电话</td>
+				<td>余额</td>
+				<td>操作</td>
+			</thead>
+			<tbody>
+				{% for i in record %}
+				<tr>
+					<td>{{i.id}}</td>
+					<td>{{i.card_no}}</td>
+					<td>{{i.holder}}</td>
+					<td>{{i.phone}}</td>
+					<td>{{i.balance|floatformat}}</td>
+					<td>
+						<form id="form_{{i.id}}"style="width: 100%;" action="/accounting/administrator/VIP/" method="POST">
+						{% csrf_token %} 
+							<input type="hidden" id="vip_no" name="vip_no" value="{{i.id}}" />
+							<input type="hidden" name="delete_element" value="delete_element" />
+							<a href="/accounting/administrator/VIP/update?no={{i.id}}" class='btn btn-warning'>信息更新</a>
+							<button class='btn btn-danger'  type="button" name="delete_element" onclick="delete_element_method('form_{{i.id}}')">删除</button>
+						</form>
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	<div class="row" style="padding: 20px;">
+		<div class="col-6">
+			<h3>预编入会员</h3>
+		</div>
+		<div class="col-6 text-right">
+			<button class="btn btn-primary" onclick="add_new_vip()">+添加</button>
+		</div>
+		<form style="width: 100%;" action="/accounting/administrator/VIP/" method="POST">
+		{% csrf_token %} 
+		<table class="table">
+			<thead>
+				<td>编号</td>
+				<td>卡号</td>
+				<td>姓名</td>
+				<td>联系电话</td>
+				<td>余额</td>
+				<td>操作</td>
+			</thead>
+			<tbody id="ready-add-table">
+			</tbody>
+		</table>
+		<input type="hidden" id="index_number" name="index_number" value="1" />
+		<div class="col-12 text-center">
+			<button class='btn btn-success' name="add_element">确认添加</button>
+		</div>
+		</form>
+	</div>
+</div>
+{% endblock %}

@@ -45,9 +45,40 @@ class PaymentMethod(models.Model):
 	real_income = models.BooleanField(default=True)
 	is_deleted = models.BooleanField(default=False)
 
+class VIP(models.Model):
+	card_no = models.CharField(max_length=60)
+	holder = models.CharField(max_length=60, null=True)
+	phone = models.CharField(max_length=60, null=True)
+	balance = models.DecimalField(max_digits=25, decimal_places=15, default=0)
+	email = models.CharField(max_length=60, null=True)
+	is_deleted = models.BooleanField(default=False)
+	password = models.CharField(max_length=100, null=True)
+
+class VIPPayment(models.Model):
+	payment = models.ForeignKey(
+			PaymentMethod,
+			on_delete=models.CASCADE,
+			null=True
+		)
+class VIPTopupRecord(models.Model):
+	vip = models.ForeignKey(
+			VIP,
+			on_delete=models.CASCADE,
+		)
+	recorder = models.ForeignKey(
+			SystemUser,
+			on_delete=models.CASCADE,
+		)
+	# 1 for create, 2 for edit(topup), 3 for delete
+	operation = models.IntegerField()
+	note = models.CharField(max_length=60)
+	date = models.DateTimeField(auto_now_add=True, blank=True)
+
 class Income(models.Model):
 	customer_name = models.CharField(max_length=60, null=True)
-	total = models.DecimalField(max_digits=25, decimal_places=15)
+	# false = male, true = female
+	gender = models.BooleanField(default=False)
+	total = models.DecimalField(max_digits=25, decimal_places=15, default=0.0)
 	date = models.DateTimeField(auto_now_add=True, blank=True)
 	card_no = models.CharField(max_length=60)
 	recorder = models.ForeignKey(
@@ -57,8 +88,15 @@ class Income(models.Model):
 	payment_method = models.ForeignKey(
 			PaymentMethod,
 			on_delete=models.CASCADE,
+			null=True
+		)
+	vip = models.ForeignKey(
+			VIP,
+			on_delete=models.CASCADE,
+			null=True
 		)
 	is_deleted = models.BooleanField(default=False)
+	is_paid = models.BooleanField(default=False)
 
 class Service(models.Model):
 	income = models.ForeignKey(
@@ -68,19 +106,19 @@ class Service(models.Model):
 	item = models.ForeignKey(
 			Item,
 			on_delete=models.CASCADE,
+			null=True
 		)
 	staff = models.ForeignKey(
 			Staff,
 			on_delete=models.CASCADE,
+			null=True
 		)
-	item_no = models.IntegerField(default=1)
+	recorder = models.ForeignKey(
+			SystemUser,
+			on_delete=models.CASCADE,
+			null=True
+		)
+	item_no = models.DecimalField(max_digits=25, decimal_places=15, default=1.0)
 	is_deleted = models.BooleanField(default=False)
 
-class VIP(models.Model):
-	card_no = models.CharField(max_length=60)
-	holder = models.CharField(max_length=60)
-	phone = models.CharField(max_length=60, null=True)
-	balance = models.DecimalField(max_digits=25, decimal_places=15, default=0)
-	email = models.CharField(max_length=60, null=True)
-	is_deleted = models.BooleanField(default=False)
 # Create your models here.

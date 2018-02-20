@@ -9,29 +9,28 @@
 		<table class="table">
 			<thead>
 				<td>编号</td>
-				<td>姓名</td>
-				<td>用户名</td>
-				<td>密码</td>
-				<td>操作</td>
+				<td>时间</td>
+				<td>金额</td>
+				<td>支付方式</td>
+				<td>记录员</td>
+				<td>备注</td>
 			</thead>
 			<tbody>
 				{% for i in record %}
 				<tr>
-					<form id="form_{{i.id}}"style="width: 100%;" action="/accounting/administrator/member/auth/" method="POST">
-					{% csrf_token %} 
-						<td>{{i.id}}</td>
-						<td>{{i.staff.name}}</td>
-						<td><input type="input" name="username_{{i.id}}" value="{{i.user.username}}"/></td>
-						<td><input type="password" name="password_{{i.id}}" /></td>
-						<td>
-							<input type="hidden" id="sys_no" name="sys_no" value="{{i.id}}" />
-							<button class='btn btn-warning' name="update_element" onclick="update_element_method('form_{{i.id}}')">更新信息</button>
-						</td>
-					</form>
+					<td>{{i.id}}</td>
+					<td>{{i.date|date:"Y-m-d H:m"}}</td>
+					<td>{{i.total|floatformat}}</td>
+					<td>{{i.payment_method.name}}</td>
+					<td>{{i.recorder.user.first_name}}</td>
+					<td>备注</td>
 				</tr>
 				{% endfor %}
 			</tbody>
 		</table>
+		<div class="row text-right">
+			今日总收入：{{total|floatformat}}
+		</div>
 	</div>
 </div>
 {% endblock %}

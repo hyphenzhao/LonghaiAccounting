@@ -46,12 +46,198 @@ def index(request):
 			return render(request, "index.html", context)
 		if system_user.role == 'admin':
 			return HttpResponseRedirect('/accounting/administrator/')
+		if system_user.role == 'cashier':
+			return HttpResponseRedirect('/accounting/cashier/')
 	elif login_status == 2:
 		message = '用户名密码错误'
 	context = {
 		"message": message,
 	}
 	return render(request, "index.html", context)
+
+def cashier_vip(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'cashier' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	record = VIP.objects.filter(is_deleted=False)
+	context = {
+		"record":record,
+		"tag":"vip",
+	}
+	return render(request, "cashier_vip.html", context)
+
+def cashier_bill(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'cashier' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	if request.method == "POST" and "delete_element" in request.POST:
+		income_id = request.POST['income_id']
+		income = Income.objects.get(pk=income_id)
+		income.is_deleted = True
+		income.save()
+		return HttpResponseRedirect('/accounting/cashier/bill/')
+	record = Income.objects.filter(is_deleted=False).filter(is_paid=False)
+	context = {
+		"record":record,
+		"tag":"bill",
+	}
+	return render(request, "cashier_bill.html", context)
+
+def cashier_bill_create(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'cashier' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	if request.method == "POST":
+		card_no = request.POST['card_no']
+		item_no = request.POST['item_no']
+		if item_no == "0":
+			gender = False
+		else:
+			gender = True
+		new_income = Income(
+			card_no=card_no,
+			recorder=system_user,
+			gender=gender
+			)
+		new_income.save()
+		return HttpResponseRedirect('/accounting/cashier/bill/')
+	items = Item.objects.filter(is_deleted=False)
+	context = {
+		"tag":"bill",
+		"items":items,
+	}
+	return render(request, "cashier_bill_create.html", context)
+
+def cashier_bill_edit(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'cashier' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	income_id = request.GET['income_id']
+	income = Income.objects.get(pk=income_id)
+	if income.is_paid or income.is_deleted:
+		return HttpResponseRedirect('/accounting/cashier/bill/')
+	services = Service.objects.filter(income=income).filter(is_deleted=False)
+	items = Item.objects.filter(is_deleted=False)
+	staffs = Staff.objects.filter(title__priviledge=100).filter(is_deleted=False)
+	total = 0
+	if services.exists():
+		for i in services:
+			total = total + i.item.price * i.item_no
+	if request.method == "POST" and "add_element" in request.POST:
+		index_number = request.POST['index_number']
+		for i in range(1, int(index_number)):
+			item_id_name = 'service_selection_' + str(i)
+			if item_id_name in request.POST:
+				item_id = request.POST[item_id_name]
+				item = Item.objects.get(pk=item_id)
+				item_no = request.POST['number_' + str(i)]
+				new_service = Service(
+					income=income,
+					item=item,
+					item_no=item_no,
+					recorder=system_user
+					)
+				staff_id = request.POST['staff_selection_' + str(i)]
+				if staff_id != '0':
+					staff = Staff.objects.get(pk=staff_id)
+					new_service.staff=staff
+				new_service.save()
+		return HttpResponseRedirect('/accounting/cashier/bill/edit?income_id=' + income_id)
+	if request.method == "POST" and "delete_element" in request.POST:
+		service_id = request.POST['service_id']
+		delete_service = Service.objects.get(pk=service_id)
+		delete_service.is_deleted = True
+		delete_service.save()
+		return HttpResponseRedirect('/accounting/cashier/bill/edit?income_id=' + income_id)
+	context = {
+		"tag":"bill",
+		"items":items,
+		"services":services,
+		"income": income,
+		"total": total,
+		"staffs": staffs,
+		"current_user": system_user
+	}
+	return render(request, "cashier_bill_edit.html", context)
+
+def cashier_bill_pay(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'cashier' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	income_id = request.GET['income_id']
+	income = Income.objects.get(pk=income_id)
+	if income.is_paid or income.is_deleted:
+		return HttpResponseRedirect('/accounting/cashier/bill/')
+	services = Service.objects.filter(income=income).filter(is_deleted=False)
+	payment_methods = PaymentMethod.objects.filter(is_deleted=False)
+	current_method = VIPPayment.objects.all().order_by('-id')[0]
+	total = 0
+	if services.exists():
+		for i in services:
+			total = total + i.item.price * i.item_no
+	if request.method == "POST" and "pay" in request.POST:
+		vip_pay = request.POST['payment_auth_method_selection']
+		if vip_pay != "":
+			auth_check = False
+			if vip_pay == "card":
+				card_no = request.POST['vip_card_no']
+				vip_user = VIP.objects.filter(card_no=card_no)
+				if vip_user:
+					vip = vip_user.order_by('-id')[0]
+					auth_check = True
+			elif vip_pay == "phone":
+				phone = request.POST['phone_no']
+				password = request.POST['phone_password']
+				vip_user = VIP.objects.filter(phone=phone)
+				if vip_user and vip_user.order_by('-id')[0].password == password:
+					vip = vip_user.order_by('-id')[0]
+					auth_check = True
+			if auth_check and vip.balance >= total:
+				vip.balance = vip.balance - total
+				vip.save()
+				income.customer_name = vip.holder
+				payment_method_id = request.POST['payment_method']
+				payment_method = PaymentMethod.objects.get(pk=payment_method_id)
+				income.total = total
+				income.payment_method = payment_method
+				income.is_paid = True
+				income.vip = vip
+				income.save()
+				return HttpResponseRedirect('/accounting/cashier/bill/')
+			else:
+				return HttpResponseRedirect('/accounting/cashier/bill/pay?income_id=' + income_id)
+		else:
+			payment_method_id = request.POST['payment_method']
+			payment_method = PaymentMethod.objects.get(pk=payment_method_id)
+			income.total = total
+			income.payment_method = payment_method
+			income.is_paid = True
+			income.save()
+			return HttpResponseRedirect('/accounting/cashier/bill/')
+	context = {
+		"tag":"bill",
+		"services":services,
+		"income": income,
+		"methods": payment_methods,
+		"current_method": current_method,
+		"total": total,
+	}
+	return render(request, "cashier_bill_pay.html", context)
 
 def admin_bill_index(request):
 	if 'user_id' not in request.session:
@@ -71,11 +257,16 @@ def admin_bill_today(request):
 		return HttpResponseRedirect('/accounting/')
 	start = now().date()
 	end = start + timedelta(days=1)
-	record = Income.objects.filter(date__range=(start, end))
+	record = Income.objects.filter(date__range=(start, end)).filter(is_deleted=False).filter(is_paid=True)
+	total = 0
+	if record:
+		for i in record:
+			total = total + i.total
 	context = {
 		"record":record,
 		"tag":"bill",
-		"label": "today"
+		"label": "today",
+		"total":total
 	}
 	return render(request,"admin_bill_today.html", context)
 
@@ -145,7 +336,7 @@ def admin_member_staff(request):
 					if staff_job.priviledge <=5:
 						role = "admin"
 					else:
-						role = "staff"
+						role = "cashier"
 					staff_username = request.POST["username_" + str(i)]
 					staff_password = request.POST["password_" + str(i)]
 					new_user = User.objects.create_user(
@@ -282,4 +473,118 @@ def admin_service(request):
 		"tag":"service",
 	}
 	return render(request,"admin_service.html", context)
+
+def admin_VIP(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	if request.method == "POST" and "add_element" in request.POST:
+		index_number = request.POST['index_number']
+		for i in range(1, int(index_number)):
+			new_vip_exist = "new_vip_card_" + str(i)
+			if new_vip_exist in request.POST:
+				new_vip_card = request.POST[new_vip_exist]
+				new_vip_name = request.POST['new_vip_name_' + str(i)]
+				new_vip_phone = request.POST['new_vip_phone_' + str(i)]
+				new_vip_balance = request.POST['new_vip_balance_' + str(i)]
+				new_vip = VIP(
+					card_no=new_vip_card,
+					holder=new_vip_name,
+					phone=new_vip_phone,
+					balance=new_vip_balance
+					)
+				new_vip.save()
+				note = "开卡，充值" + new_vip_balance + "元"
+				new_vip_record = VIPTopupRecord(
+						vip=new_vip,
+						recorder=system_user,
+						operation=1,
+						note=note
+					)
+				new_vip_record.save()
+		return HttpResponseRedirect('/accounting/administrator/VIP/')
+	if request.method == "POST" and "delete_element" in request.POST:
+		vip_id = request.POST['vip_no']
+		vip = VIP.objects.get(pk=vip_id)
+		vip.is_deleted = True
+		vip.save()
+		note = "销卡"
+		new_vip_record = VIPTopupRecord(
+			vip=vip,
+			recorder=system_user,
+			operation=3,
+			note=note
+		)
+		new_vip_record.save()
+		return HttpResponseRedirect('/accounting/administrator/VIP/')
+	record = VIP.objects.filter(is_deleted=False)
+	methods = PaymentMethod.objects.filter(is_deleted=False)
+	if VIPPayment.objects.all():
+		current_method = VIPPayment.objects.all().order_by('-id')[0]
+	else:
+		current_method = "none"
+	context = {
+		"record":record,
+		"tag":"vip",
+		"methods": methods,
+		"current_method": current_method
+	}
+	return render(request,"admin_vip.html", context)
+
+def admin_VIP_methods(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	if request.method == "POST":
+		payment_method = request.POST['payment_method']
+		payment = PaymentMethod.objects.get(pk=payment_method)
+		if VIPPayment.objects.all(): 
+			VIPPayment.objects.all().delete()
+		new_payment = VIPPayment(
+			payment=payment
+			)
+		new_payment.save()
+	return HttpResponseRedirect('/accounting/administrator/VIP/')
+
+def admin_VIP_update(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	vip_id = request.GET['no']
+	record = VIP.objects.get(pk=vip_id)
+	if record.is_deleted==True:
+		return HttpResponseRedirect('/accounting/administrator/VIP/')
+	if request.method == "POST":
+		new_no = request.POST['card_no']
+		new_name = request.POST['name']
+		new_phone = request.POST['phone']
+		new_balance = request.POST['balance']
+		record.card_no = new_no
+		record.holder = new_name
+		record.phone = new_phone
+		record.balance = new_balance
+		record.save()
+		note = "更改，"
+		new_vip_record = VIPTopupRecord(
+			vip=vip,
+			recorder=system_user,
+			operation=2,
+			note=note
+		)
+		new_vip_record.save()
+		return HttpResponseRedirect('/accounting/administrator/VIP/') 
+	context = {
+		"record":record,
+		"tag":"vip",
+	}
+	return render(request,"admin_vip_update.html", context)
 # Create your views here.

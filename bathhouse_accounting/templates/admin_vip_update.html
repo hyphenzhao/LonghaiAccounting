@@ -1,0 +1,16 @@
+{% extends "admin_base.html" %}
+{% load staticfiles %}
+{% block content %}
+<div class="container" style="background-color: white; padding: 10%;">
+	<form action="/accounting/administrator/VIP/update?no={{record.id}}" method="POST">
+		{% csrf_token %}
+		<label>编号：</label><input class="form-control" type="input" readonly="readonly" value="{{record.id}}" />
+		<label>卡号：</label><input class="form-control" name="card_no" type="input" value="{{record.card_no}}" />
+		<label>姓名：</label><input class="form-control" name="name" type="input" value="{{record.holder}}" />
+		<label>联系电话：</label><input class="form-control" name="phone" type="input" value="{{record.phone}}" />
+		<label>余额：</label><input class="form-control" name="balance" type="input" value="{{record.balance|floatformat}}" />
+		<button class="btn btn-primary">确认更新</button>
+		<a class="btn btn-secondary" href="/accounting/administrator/VIP/">返回</a>
+	</form>
+</div>
+{% endblock %}

@@ -34,7 +34,8 @@
 						<form id="form_{{i.id}}"style="width: 100%;" action="/accounting/administrator/member/staff/" method="POST">
 						{% csrf_token %} 
 							<input type="hidden" id="staff_no" name="staff_no" value="{{i.id}}" />
-							<button class='btn btn-danger' name="delete_element" onclick="delete_element_method('form_{{i.id}}')">删除</button>
+							<input type="hidden" name="delete_element" value="delete_element" />
+							<button class='btn btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{i.id}}')">删除</button>
 						</form>
 					</td>
 				</tr>

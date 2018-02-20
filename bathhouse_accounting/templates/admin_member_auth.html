@@ -28,7 +28,8 @@
 						<td><input type="password" name="password_{{i.id}}" /></td>
 						<td>
 							<input type="hidden" id="sys_no" name="sys_no" value="{{i.id}}" />
-							<button class='btn btn-warning' name="update_element" onclick="update_element_method('form_{{i.id}}')">更新信息</button>
+							<input type="hidden" name="delete_element" value="delete_element" />
+							<button class='btn btn-warning' type="button" name="update_element" onclick="update_element_method('form_{{i.id}}')">更新信息</button>
 						</td>
 					</form>
 				</tr>
