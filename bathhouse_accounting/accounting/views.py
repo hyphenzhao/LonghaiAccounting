@@ -6,6 +6,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth import authenticate
 from django.utils.timezone import now, timedelta
 from .models import *
+from decimal import *
 
 def index(request):
 	request.session.set_expiry(0)
@@ -171,6 +172,52 @@ def cashier_vip(request):
 		"tag":"vip",
 	}
 	return render(request, "cashier_vip.html", context)
+
+def cashier_vip_topup(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'cashier' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	vip_id = request.GET['vip_no']
+	vip = VIP.objects.get(pk=vip_id)
+	if request.method == "POST":
+		total = request.POST['topup_balance']
+		vip.balance = vip.balance + Decimal(total)
+		vip.save()
+		new_record = VIPTopupRecord(
+			vip=vip,
+			recorder=system_user,
+			operation=2,
+			note="充值" + total,
+			)
+		new_record.save()
+		return HttpResponseRedirect('/accounting/cashier/VIP/')
+	context = {
+		"vip":vip,
+		"tag":"vip",
+	}
+	return render(request, "cashier_vip_topup.html", context)
+
+def cashier_vip_view(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'cashier' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	vip_id = request.GET['vip_no']
+	vips = VIP.objects.filter(is_deleted=False).filter(card_no=vip_id)
+	if vips:
+		vip = vips.order_by('-id')[0]
+	else:
+		return HttpResponseRedirect('/accounting/cashier/VIP/')
+	context = {
+		"vip":vip,
+		"tag":"vip",
+	}
+	return render(request, "cashier_vip_view.html", context)
 
 def cashier_bill(request):
 	if 'user_id' not in request.session:

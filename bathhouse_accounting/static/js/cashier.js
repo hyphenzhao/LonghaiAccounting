@@ -1,4 +1,8 @@
 var index = 1;
+function search_vip() {
+	var vip_no = document.getElementById("vip_no");
+	window.location.href = "/accounting/cashier/VIP/view?vip_no=" + vip_no.value;
+}
 function payment_method_alter() {
 	var payment_method = document.getElementById("payment_method");
 	var current_method = document.getElementById("current_method");

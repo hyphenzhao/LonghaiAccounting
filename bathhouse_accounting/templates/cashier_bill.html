@@ -11,7 +11,7 @@
 				</div>
 				<div class="row">
 			{% for i in male_range %}
-			<div class="card text-center" style="width: 12rem;">
+			<div class="card text-center">
 				<div class="card-header">
 				</div>
 				<div class="card-body" {% if male_record|return_item:i != 0 %}style="background-color: lightblue;"{% endif %}>
@@ -49,7 +49,7 @@
 				</div>
 				<div class="row">
 			{% for i in female_range %}
-			<div class="card text-center" style="width: 12rem;">
+			<div class="card text-center">
 				<div class="card-header">
 				</div>
 				<div class="card-body" {% if female_record|return_item:i != 0 %}style="background-color: #FDD017;"{% endif %}>

@@ -1,0 +1,25 @@
+{% extends "cashier_base.html" %}
+{% load staticfiles %}
+{% block content %}
+<div style="background-color: white; padding: 20px;">
+	<div class="card" style="width: 30rem;">
+		<div class="card-header text-center">
+			<h3>姓名：{{vip.holder}}</h3>
+		</div>
+		<div class="card-body">
+			<div class="row">
+				<p>联系方式：{{vip.phone}}</p>
+			</div>
+			<div class="row">
+				<p>余额：{{vip.balance|floatformat}}</p>
+			</div>
+			<div class="row">
+				<a class='btn btn-primary' href="/accounting/cashier/VIP/topup?vip_no={{vip.id}}">充值</a>
+				<a href="/accounting/cashier/VIP/" class="btn btn-secondary">返回</a>
+			</div>
+		</div>
+		<div class="card-footer">
+		</div>
+	</div>
+</div>
+{% endblock %}
