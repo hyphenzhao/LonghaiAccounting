@@ -48,12 +48,115 @@ def index(request):
 			return HttpResponseRedirect('/accounting/administrator/')
 		if system_user.role == 'cashier':
 			return HttpResponseRedirect('/accounting/cashier/')
+		if system_user.role == 'waiter':
+			return HttpResponseRedirect('/accounting/waiter/')
 	elif login_status == 2:
 		message = '用户名密码错误'
 	context = {
 		"message": message,
 	}
 	return render(request, "index.html", context)
+
+def waiter_index(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'waiter' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	workers = Staff.objects.filter(is_deleted=False).filter(title__priviledge=100)
+	context = {
+		"workers":workers
+	}
+	return render(request, "waiter_index.html", context)
+
+def waiter_order(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'waiter' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	if request.method == "POST":
+		request.session['worker_id'] = request.POST['worker_id']
+	else:
+		return HttpResponseRedirect('/accounting/waiter/')
+	incomes = Income.objects.filter(is_deleted=False).filter(is_paid=False)
+	context = {
+		"incomes":incomes
+	}
+	return render(request, "waiter_order.html", context)
+
+def waiter_order_service(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'waiter' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	if request.method == "POST":
+		request.session['income_id'] = request.POST['income_id']
+	staff_id = request.session['worker_id']
+	current_staff = Staff.objects.get(pk=staff_id)
+	income_id = request.session['income_id']
+	income = Income.objects.get(pk=income_id)
+	if income.is_paid or income.is_deleted:
+		return HttpResponseRedirect('/accounting/waiter/')
+	services = Service.objects.filter(income=income).filter(is_deleted=False).order_by("-id")
+	items = Item.objects.filter(is_deleted=False)
+	total = 0
+	if services.exists():
+		for i in services:
+			total = total + i.item.price * i.item_no
+	context = {
+		"tag": "bill",
+		"items": items,
+		"services": services,
+		"income": income,
+		"total": total,
+		"current_staff": current_staff,
+		"current_user": system_user
+	}
+	return render(request, "waiter_order_service.html", context)
+
+def waiter_order_service_edit(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'waiter' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	staff_id = request.session['worker_id']
+	income_id = request.session['income_id']
+	income = Income.objects.get(pk=income_id)
+	staff = Staff.objects.get(pk=staff_id)
+	services = Service.objects.filter(income=income).filter(is_deleted=False).order_by("-id")
+	if request.method == "POST" and "add_element" in request.POST:
+		item_id = request.POST['service_selection']
+		selected_item = Item.objects.get(pk=item_id)
+		exist_service = services.filter(staff=staff).filter(item=selected_item).filter(recorder=system_user)
+		if exist_service:
+			selected_service = exist_service.order_by('-id')[0]
+			selected_service.item_no = selected_service.item_no + 1
+			selected_service.save()
+		else:
+			new_service = Service(
+					income=income,
+					item=selected_item,
+					staff=staff,
+					recorder=system_user, 
+				)
+			new_service.save()
+	if request.method == "POST" and "delete_element" in request.POST:
+		service_id = request.POST['service_id']
+		delete_service = Service.objects.get(pk=service_id)
+		if delete_service.item_no > 1:
+			delete_service.item_no = delete_service.item_no - 1
+		else:
+			delete_service.item_no = 0
+			delete_service.is_deleted = True
+		delete_service.save()
+	return HttpResponseRedirect('/accounting/waiter/order/service/')
 
 def cashier_vip(request):
 	if 'user_id' not in request.session:
@@ -83,9 +186,20 @@ def cashier_bill(request):
 		income.save()
 		return HttpResponseRedirect('/accounting/cashier/bill/')
 	record = Income.objects.filter(is_deleted=False).filter(is_paid=False)
+	female_record = [0 for i in range(49)]
+	male_record = [0 for i in range(61)]
+	for i in record:
+		if i.gender:
+			female_record[int(i.card_no)] = i.id
+		else:
+			male_record[int(i.card_no)] = i.id
 	context = {
 		"record":record,
 		"tag":"bill",
+		"female_range":range(48),
+		"male_range":range(60),
+		"male_record": male_record,
+		"female_record": female_record
 	}
 	return render(request, "cashier_bill.html", context)
 
@@ -128,37 +242,55 @@ def cashier_bill_edit(request):
 	income = Income.objects.get(pk=income_id)
 	if income.is_paid or income.is_deleted:
 		return HttpResponseRedirect('/accounting/cashier/bill/')
-	services = Service.objects.filter(income=income).filter(is_deleted=False)
+	services = Service.objects.filter(income=income).filter(is_deleted=False).order_by("-id")
 	items = Item.objects.filter(is_deleted=False)
 	staffs = Staff.objects.filter(title__priviledge=100).filter(is_deleted=False)
+	payment_methods = PaymentMethod.objects.filter(is_deleted=False)
+	current_method = VIPPayment.objects.all().order_by('-id')[0]
 	total = 0
+	previous_service = None
 	if services.exists():
 		for i in services:
 			total = total + i.item.price * i.item_no
+		previous_service = services[0]
 	if request.method == "POST" and "add_element" in request.POST:
-		index_number = request.POST['index_number']
-		for i in range(1, int(index_number)):
-			item_id_name = 'service_selection_' + str(i)
-			if item_id_name in request.POST:
-				item_id = request.POST[item_id_name]
-				item = Item.objects.get(pk=item_id)
-				item_no = request.POST['number_' + str(i)]
+		staff_id = request.POST['staff_selection']
+		item_id = request.POST['service_selection']
+		selected_item = Item.objects.get(pk=item_id)
+		if staff_id != "0" and staff_id != "":
+			selected_staff = Staff.objects.get(pk=staff_id)
+			exist_service = services.filter(staff=selected_staff).filter(item=selected_item).filter(recorder=system_user)
+		else:
+			exist_service = services.filter(item=selected_item).filter(recorder=system_user)
+		if exist_service:
+			selected_service = exist_service.order_by('-id')[0]
+			selected_service.item_no = selected_service.item_no + 1
+			selected_service.save()
+		else:
+			if staff_id != "0" and staff_id != "":
+				selected_staff = Staff.objects.get(pk=staff_id)
 				new_service = Service(
 					income=income,
-					item=item,
-					item_no=item_no,
-					recorder=system_user
-					)
-				staff_id = request.POST['staff_selection_' + str(i)]
-				if staff_id != '0':
-					staff = Staff.objects.get(pk=staff_id)
-					new_service.staff=staff
-				new_service.save()
+					item=selected_item,
+					staff=selected_staff,
+					recorder=system_user, 
+				)
+			else:
+				new_service = Service(
+					income=income,
+					item=selected_item,
+					recorder=system_user, 
+				)
+			new_service.save()
 		return HttpResponseRedirect('/accounting/cashier/bill/edit?income_id=' + income_id)
 	if request.method == "POST" and "delete_element" in request.POST:
 		service_id = request.POST['service_id']
 		delete_service = Service.objects.get(pk=service_id)
-		delete_service.is_deleted = True
+		if delete_service.item_no > 1:
+			delete_service.item_no = delete_service.item_no - 1
+		else:
+			delete_service.item_no = 0
+			delete_service.is_deleted = True
 		delete_service.save()
 		return HttpResponseRedirect('/accounting/cashier/bill/edit?income_id=' + income_id)
 	context = {
@@ -168,7 +300,10 @@ def cashier_bill_edit(request):
 		"income": income,
 		"total": total,
 		"staffs": staffs,
-		"current_user": system_user
+		"current_user": system_user,
+		"methods": payment_methods,
+		"current_method": current_method,
+		"previous_service": previous_service
 	}
 	return render(request, "cashier_bill_edit.html", context)
 
@@ -332,11 +467,14 @@ def admin_member_staff(request):
 					salary=staff_salary_value
 					)
 				new_staff.save()
+				role = "worker"
 				if staff_job.priviledge <= 20:
-					if staff_job.priviledge <=5:
+					if staff_job.priviledge == 5:
 						role = "admin"
-					else:
+					elif staff_job.priviledge == 20:
 						role = "cashier"
+					elif staff_job.priviledge == 15:
+						role = "waiter"
 					staff_username = request.POST["username_" + str(i)]
 					staff_password = request.POST["password_" + str(i)]
 					new_user = User.objects.create_user(

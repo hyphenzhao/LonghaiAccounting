@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block content %}
+<div style="background-color: white; padding: 20px;">
+	<div class="row" style="padding: 20px;">
+		<div class="col-6">
+			<h3>{{income.card_no|add:'1'}}号顾客账单</h3>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-4 col-xs-4 col-sm-4">
+		<table class="table table-condensed table-bordered table-striped">
+			<thead>
+				<td>服务项目名称</td>
+				<td>单价</td>
+				<td>数量</td>
+				<td>技师</td>
+				<td>操作</td>
+			</thead>
+			<tbody>
+				{% for i in services %}
+				<tr>
+					<td>{{i.item.name}}</td>
+					<td>{{i.item.price|floatformat}}</td>
+					<td>{{i.item_no|floatformat}}</td>
+					<td>{{i.staff.name}}</td>
+					<td>
+						<form id="form_{{i.id}}" style="width: 100%;" action="/accounting/waiter/order/service/edit/" method="POST">
+						{% csrf_token %} 
+							<input type="hidden" id="service_id" name="service_id" value="{{i.id}}" />
+							<input type="hidden" name="delete_element" value="delete_element" />
+							{% if current_user == i.recorder and current_staff == i.staff %}
+							<button class='btn btn-lg btn-danger' name="delete_element">删除</button>
+							{% endif %}
+						</form>
+					</td>
+				</tr>
+				{% endfor %}
+				<tr>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td>总金额：</td>
+					<td id="total_payment">{{total|floatformat}}</td>
+				</tr>
+			</tbody>
+		</table>
+		</div>
+		<div class="col-8 col-xs-8 col-sm-8">
+			<div class="row">
+				<div class="col-6">
+					<h3>选择项目</h3>
+				</div>
+			</div>
+			<form action="/accounting/waiter/order/service/edit/" id="add_form" method="POST">
+				{% csrf_token %}
+				<input type="hidden" name="service_selection" id="service_selection_input" value="0" />
+				<input type="hidden" name="add_element" value="add_element" />
+				{% for i in items %}
+				<button type="button" onclick="select_service({{i.id}})" class="btn btn-lg btn-outline-primary">编号：{{i.id}}<br>{{i.name}}<br>价格：¥{{i.price|floatformat}}</button>
+				{% endfor %}
+			</form>
+		</div>
+	</div>
+	<div class="col-12">
+		<a href="/accounting/waiter/" class="btn btn-lg btn-secondary">返回首页</a>
+	</div>
+</div>
+{% endblock %}

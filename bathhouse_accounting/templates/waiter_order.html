@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block content %}
+<div style="background-color: white;">
+	<div class="col-12" style="padding: 30px;">
+		<div class="col-12">
+			<h1>技师选择</h1>
+		</div>
+		<div class="row">
+		{% for i in incomes%}
+		<div class="card" style="width: 15rem;">
+			<div class="card-header">
+			</div>
+			<div class="card-body text-center" {% if i.gender %}style="background-color: yellow;"{% else %}style="background-color: lightblue;"{% endif %}>
+				<h2>{% if i.gender %}女客：{% else %}男客：{% endif %}{{i.card_no|add:'1'}}</h2>
+				<form action="/accounting/waiter/order/service/" method="POST">
+					{% csrf_token %}
+					<input type="hidden" name="income_id" value="{{i.id}}" />
+					<button class="btn btn-lg btn-primary">选定</button>
+				</form>
+			</div>
+			<div class="card-footer">
+			</div>
+		</div>
+		{% endfor %}
+		</div>
+		<div class="row">
+			<a href="/accounting/waiter/" class="btn btn-lg btn-secondary">返回</a>
+		</div>
+	</div>
+</div>
+{% endblock %}

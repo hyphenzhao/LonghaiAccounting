@@ -73,3 +73,21 @@ function service_onchange(id) {
 	item_price = document.getElementById("price_" + id);
 	item_price.innerHTML = prices.get(item_id);
 }
+
+function select_staff(id) {
+	allButtons = document.getElementsByName("staff_selection_button");
+	for(var i = 0; i < allButtons.length; i++) {
+		allButtons[i].setAttribute("class", "btn btn-lg btn-outline-primary");
+	}
+	selectedButton = document.getElementById("staff_selection_button_" + id);
+	selectedButton.setAttribute("class","btn btn-lg btn-primary");
+	selectedInput = document.getElementById("staff_selection_input");
+	selectedInput.value = id;
+}
+
+function select_service(id) {
+	selectedInput = document.getElementById("service_selection_input");
+	selectedInput.value = id;
+	form = document.getElementById("add_form");
+	form.submit();
+}

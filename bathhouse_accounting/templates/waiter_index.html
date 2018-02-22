@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block content %}
+<div style="background-color: white; width: 100%;">
+	<div class="col-12 col-sm-12" style="padding: 30px;">
+		<div class="col-12 col-sm-12">
+			<h1>技师选择</h1>
+		</div>
+		<div class="col-xs-12 col-sm-12">
+		{% for i in workers%}
+		<div class="card" style="width: 15rem;">
+			<div class="card-header">
+			</div>
+			<div class="card-body text-center">
+				<h2>{{i.name}}</h2>
+				<form action="/accounting/waiter/order/" method="POST">
+					{% csrf_token %}
+					<input type="hidden" name="worker_id" value="{{i.id}}" />
+					<button class="btn btn-lg btn-primary">选定</button>
+				</form>
+			</div>
+			<div class="card-footer">
+			</div>
+		</div>
+		{% endfor %}
+		</div>
+	</div>
+</div>
+{% endblock %}

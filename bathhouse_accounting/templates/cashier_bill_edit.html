@@ -6,24 +6,26 @@
 	var staff_options_innerHTML = "<option value='0'>无</option>" + {% for i in staffs%}"<option value='{{i.id}}'>{{i.name}}</option>" + {% endfor %} "";
 	var prices = new Map([{% for i in items%}[{{i.id}},{{i.price|floatformat}}],{% endfor %}]);
 </script>
-<div class="container" style="background-color: white; padding: 20px;">
+<div style="background-color: white; padding: 20px;">
 	<div class="row" style="padding: 20px;">
 		<div class="col-6">
 			<h3>{{income.card_no}}号顾客账单</h3>
 		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-4">
 		<table class="table table-condensed table-bordered table-striped">
 			<thead>
-				<td>编号</td>
 				<td>服务项目名称</td>
 				<td>单价</td>
 				<td>数量</td>
-				<td>负责人</td>
+				<td>技师</td>
 				<td>操作</td>
 			</thead>
 			<tbody>
 				{% for i in services %}
 				<tr>
-					<td>{{forloop.counter}}</td>
 					<td>{{i.item.name}}</td>
 					<td>{{i.item.price|floatformat}}</td>
 					<td>{{i.item_no|floatformat}}</td>
@@ -34,7 +36,7 @@
 							<input type="hidden" id="service_id" name="service_id" value="{{i.id}}" />
 							<input type="hidden" name="delete_element" value="delete_element" />
 							{% if current_user == i.recorder %}
-							<button class='btn btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{i.id}}')">删除</button>
+							<button class='btn btn-danger' name="delete_element">删除</button>
 							{% endif %}
 						</form>
 					</td>
@@ -44,38 +46,75 @@
 					<td></td>
 					<td></td>
 					<td></td>
-					<td></td>
 					<td>总金额：</td>
 					<td id="total_payment">{{total|floatformat}}</td>
 				</tr>
 			</tbody>
 		</table>
-		<div class="container">
+		</div>
+		<div class="col-3">
 			<div class="row">
 				<div class="col-6">
-					<h3>添加服务</h3>
-				</div>
-				<div class="col-6 text-right">
-					<button class="btn btn-primary" onclick="add_new_service()">+添加</button>
+					<h3>选择技师</h3>
 				</div>
 			</div>
-			<form action="/accounting/cashier/bill/edit?income_id={{income.id}}" method="POST">
+			<button type="button" name="staff_selection_button" {% if not previous_service or not previous_service.staff %}class="btn btn-lg btn-primary"{%else%}class="btn btn-lg btn-outline-primary"{%endif%} id="staff_selection_button_0" onclick="select_staff(0)">编号：0<br>无</button>
+			{% for i in staffs %}
+			<button type="button" name="staff_selection_button" {% if previous_service and previous_service.staff.id == i.id%}class="btn btn-lg btn-primary"{%else%}class="btn btn-lg btn-outline-primary"{%endif%} id="staff_selection_button_{{i.id}}" onclick="select_staff({{i.id}})">编号：{{i.id}}<br>{{i.name}}</button>
+			{% endfor %}
+		</div>
+		<div class="col-5">
+			<div class="row">
+				<div class="col-6">
+					<h3>选择项目</h3>
+				</div>
+			</div>
+			<form action="/accounting/cashier/bill/edit?income_id={{income.id}}" id="add_form" method="POST">
+				{% csrf_token %} 	
+				<input type="hidden" name="staff_selection" id="staff_selection_input" value="{%if previous_service%}{{previous_service.staff.id}}{%else%}0{%endif%}" />
+				<input type="hidden" name="service_selection" id="service_selection_input" value="0" />
+				<input type="hidden" name="add_element" value="add_element" />
+				{% for i in items %}
+				<button type="button" onclick="select_service({{i.id}})" class="btn btn-lg btn-outline-primary">编号：{{i.id}}<br>{{i.name}}<br>价格：¥{{i.price|floatformat}}</button>
+				{% endfor %}
+			</form>
+		</div>
+		<div class="container">
+			<form action="/accounting/cashier/bill/pay?income_id={{income.id}}" method="POST">
 				{% csrf_token %}
-				<table class="table table-condensed table-bordered table-striped">
-					<thead>
-						<td>编号</td>
-						<td>服务项目名称</td>
-						<td>单价</td>
-						<td>数量</td>
-						<td>负责人</td>
-						<td>操作</td>
-					</thead>
-					<tbody id="ready-add-table">
-					</tbody>
-				</table>
-				<input type="hidden" id="index_number" name="index_number" value="1" />
-				<div class="col-12 text-center">
-					<button class='btn btn-success' name="add_element">确认添加</button>
+				<div class="row">
+					<div class="col-4">
+						<label for="payment_method">支付方式：</label>
+						<select class="custom-select" name="payment_method" id="payment_method" onchange="payment_method_alter()">
+						{% for i in methods %}
+							<option value="{{i.id}}"{% if current_method.payment.id == i.id %} id="current_method"{% endif %}>
+								{{i.name}}
+							</option>
+						{% endfor %}
+						</select>
+					</div>
+					<div class="col-4" id="payment_auth_method" hidden>
+						<div class="form-check">
+							<input class="form-check-input" type="radio" name="payment_auth" id="payment_auth_1" onchange="auth_method_alter()" checked><label class="form-check-label" for="payment_auth_1">刷卡支付</label>
+						</div>
+						<div class="form-check">
+							<input class="form-check-input" type="radio" name="payment_auth" id="payment_auth_2" onchange="auth_method_alter()"><label class="form-check-label" for="payment_auth_2">手机号/密码支付</label>
+						</div>
+					</div>
+					<div class="col-4" id="payment_auth_card" hidden>
+						<label for="vip_card_no">刷卡支付：</label>
+						<input class="form-control" type="password" id="vip_card_no" name="vip_card_no" />
+					</div>
+					<div class="col-4" id="payment_auth_phone" hidden>
+						<label for="phone_no">手机号：</label>
+						<input class="form-control" type="input" id="phone_no" name="phone_no" />
+						<label for="phone_password">密码：</label>
+						<input class="form-control" type="password" id="phone_password" name="phone_password" />
+					</div>
+				</div>
+				<div class="container text-center">
+					<input type="hidden" name="payment_auth_method_selection" id="payment_auth_method_selection" value=""/>
+					<button class="btn btn-success" name="pay">确认结账</button>
 					<a href="/accounting/cashier/bill/" class="btn btn-secondary">返回</a>
 				</div>
 			</form>

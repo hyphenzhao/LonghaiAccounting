@@ -54,6 +54,7 @@ function add_new_job() {
 							"<td><input type='input' class='form-control' name='new_job_"+ index +"' required /></td>"+
 							"<td><select class='custom-select' name='priviledge_"+index+"'>"+
 									"<option value='100'>无权限</option>"+
+									"<option value='15'>点单权限</option>"+
 									"<option value='20'>收银权限</option>"+
 									"<option value='0'>管理权限</option>"+
 								"</select></td>" +

@@ -22,4 +22,8 @@ urlpatterns = [
     url(r'^cashier/bill/pay', views.cashier_bill_pay, name='cashier_bill_pay'),
     url(r'^cashier/bill/edit', views.cashier_bill_edit, name='cashier_bill_edit'),
     url(r'^cashier/VIP/$', views.cashier_vip, name='cashier_vip'),
+    url(r'^waiter/$', views.waiter_index, name='waiter_index'),
+    url(r'^waiter/order/$', views.waiter_order, name='waiter_order'),
+    url(r'^waiter/order/service/$', views.waiter_order_service, name='waiter_order_service'),
+    url(r'^waiter/order/service/edit/$', views.waiter_order_service_edit, name='waiter_order_service_edit'),
 ]
