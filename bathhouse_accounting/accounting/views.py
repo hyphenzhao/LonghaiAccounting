@@ -716,6 +716,25 @@ def admin_service(request):
 		item.is_deleted = True
 		item.save()
 		return HttpResponseRedirect('/accounting/administrator/service/')
+	if request.method == "POST" and "up_element" in request.POST:
+		item_id = request.POST['item_no']
+		items = Item.objects.filter(is_deleted=False).order_by("id")
+		current_item = Item.objects.get(pk=item_id)
+		pre_item = items[0]
+		for i in items:
+			if i.id == current_item.id:
+				pre_item_id = pre_item.id
+				pre_item.id = 1000000
+				pre_item.save()
+				current_item.id = pre_item_id
+				current_item.save()
+				pre_item.id = item_id
+				pre_item.save()
+				item = Item.objects.get(pk=1000000)
+				item.delete()
+				return HttpResponseRedirect('/accounting/administrator/service/#form_' + str(current_item.id))
+			else:
+				pre_item = i
 	record = Item.objects.filter(is_deleted=False)
 	context = {
 		"record":record,

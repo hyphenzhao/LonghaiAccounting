@@ -92,18 +92,18 @@
 			</form>
 		</div>
 		</div>
-		<div class="col-3">
+		<div class="col-1">
 			<div class="row">
-				<div class="col-6">
-					<h3>选择技师</h3>
+				<div class="col-12">
+					<h4>选择技师</h4>
 				</div>
 			</div>
-			<button type="button" name="staff_selection_button" {% if not previous_service or not previous_service.staff %}class="btn btn-lg btn-primary"{%else%}class="btn btn-lg btn-outline-primary"{%endif%} id="staff_selection_button_0" onclick="select_staff(0)">编号：0<br>前台</button>
+			<button type="button" name="staff_selection_button" {% if not previous_service or not previous_service.staff %}class="btn btn-lg btn-primary"{%else%}class="btn btn-lg btn-outline-primary"{%endif%} id="staff_selection_button_0" onclick="select_staff(0)">前台</button>
 			{% for i in staffs %}
-			<button type="button" name="staff_selection_button" {% if previous_service and previous_service.staff.id == i.id%}class="btn btn-lg btn-primary"{%else%}class="btn btn-lg btn-outline-primary"{%endif%} id="staff_selection_button_{{i.id}}" onclick="select_staff({{i.id}})">编号：{{i.id}}<br>{{i.name}}</button>
+			<button type="button" name="staff_selection_button" {% if previous_service and previous_service.staff.id == i.id%}class="btn btn-lg btn-primary"{%else%}class="btn btn-lg btn-outline-primary"{%endif%} id="staff_selection_button_{{i.id}}" onclick="select_staff({{i.id}})">{{i.name}}</button>
 			{% endfor %}
 		</div>
-		<div class="col-5">
+		<div class="col-7">
 			<div class="row">
 				<div class="col-6">
 					<h3>选择项目</h3>
@@ -115,7 +115,7 @@
 				<input type="hidden" name="service_selection" id="service_selection_input" value="0" />
 				<input type="hidden" name="add_element" value="add_element" />
 				{% for i in items %}
-				<button type="button" onclick="select_service({{i.id}})" class="btn btn-lg btn-outline-primary">编号：{{i.id}}<br>{{i.name}}<br>价格：¥{{i.price|floatformat}}</button>
+				<button type="button" onclick="select_service({{i.id}})" class="btn btn-lg btn-outline-primary">{{i.name}}<br>价格：¥{{i.price|floatformat}}</button>
 				{% endfor %}
 			</form>
 		</div>
