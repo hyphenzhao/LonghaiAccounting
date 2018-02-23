@@ -1,0 +1,35 @@
+{% extends "cashier_base.html" %}
+{% load staticfiles %}
+{% block content %}
+<div style="background-color: white; padding: 20px;">
+	<div class="row" style="padding: 20px;">
+		<div class="col-6">
+			<h3>{{time|date:"Y-m-d"}} 日结账单</h3>
+		</div>
+		<table class="table">
+			<thead>
+				<td>编号</td>
+				<td>付款方式</td>
+				<td>付款总额</td>
+			</thead>
+			<tbody>
+				{% for key,value in totals.items%}
+				<tr>
+					<td>{{forloop.counter}}</td>
+					<td>{{key}}</td>
+					<td>{{value|floatformat}}</td>
+				</tr>
+				{% endfor %}
+				<tr>
+					<td></td>
+					<td>总金额：</td>
+					<td>{{final_total|floatformat}}</td>
+				</tr>
+			</tbody>
+		</table>
+		<div class="row">
+			<button class="btn btn-primary" onclick="print_and_exit()">打印并退出</button>
+		</div>
+	</div>
+</div>
+{% endblock %}

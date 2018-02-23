@@ -1,4 +1,8 @@
 var index = 1;
+function print_and_exit() {
+	window.print();
+	window.location.href = "/accounting/logout/";
+}
 function search_vip() {
 	var vip_no = document.getElementById("vip_no");
 	window.location.href = "/accounting/cashier/VIP/view?vip_no=" + vip_no.value;

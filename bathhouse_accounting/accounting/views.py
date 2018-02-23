@@ -8,6 +8,10 @@ from django.utils.timezone import now, timedelta
 from .models import *
 from decimal import *
 
+def logout(request):
+	del request.session["user_id"]
+	return HttpResponseRedirect('/accounting/')
+
 def index(request):
 	request.session.set_expiry(0)
 	message = ''
@@ -219,6 +223,34 @@ def cashier_vip_view(request):
 	}
 	return render(request, "cashier_vip_view.html", context)
 
+def cashier_daily(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'cashier' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	start = now().date()
+	end = start + timedelta(days=1)
+	records = Income.objects.filter(date__range=(start, end)).filter(is_deleted=False).filter(is_paid=True).filter(recorder=system_user)
+	total_dict = {}
+	payment_methods = PaymentMethod.objects.filter(is_deleted=False)
+	final_total = 0
+	for i in payment_methods:
+		total = 0
+		records_paid = records.filter(payment_method=i)
+		for j in records_paid:
+			total = total + j.total
+		total_dict[i.name] = total
+		final_total = final_total + total
+	context = {
+		"tag":"daily",
+		"totals": total_dict,
+		"final_total": final_total,
+		"time": now().date()
+	}
+	return render(request, "cashier_daily.html", context)
+
 def cashier_bill(request):
 	if 'user_id' not in request.session:
 		return HttpResponseRedirect('/accounting/')
@@ -402,7 +434,7 @@ def cashier_bill_pay(request):
 				income.save()
 				return HttpResponseRedirect('/accounting/cashier/bill/')
 			else:
-				return HttpResponseRedirect('/accounting/cashier/bill/pay?income_id=' + income_id)
+				return HttpResponseRedirect('/accounting/cashier/bill/edit?income_id=' + income_id)
 		else:
 			payment_method_id = request.POST['payment_method']
 			payment_method = PaymentMethod.objects.get(pk=payment_method_id)

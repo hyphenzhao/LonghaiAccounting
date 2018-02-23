@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
+    url(r'^logout/$',views.logout, name='logout'),
     url(r'^administrator/$', views.admin_bill_index, name='admin_index'),
     url(r'^administrator/bill/$', views.admin_bill_index, name='admin_bill_index'),
     url(r'^administrator/bill/today/$', views.admin_bill_today, name='admin_bill_today'),
@@ -22,6 +23,7 @@ urlpatterns = [
     url(r'^administrator/VIP/methods/$', views.admin_VIP_methods, name='admin_VIP_methods'),
     url(r'^administrator/VIP/update', views.admin_VIP_update, name='admin_VIP_update'),
     url(r'^cashier/$', RedirectView.as_view(permanent=True, url='bill/'), name='cashier_index'),
+    url(r'^cashier/daily/$', views.cashier_daily, name='cashier_daily'),
     url(r'^cashier/bill/$', views.cashier_bill, name='cashier_bill'),
     url(r'^cashier/bill/create/$', views.cashier_bill_create, name='cashier_bill_create'),
     url(r'^cashier/bill/pay', views.cashier_bill_pay, name='cashier_bill_pay'),
