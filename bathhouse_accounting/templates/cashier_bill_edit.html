@@ -51,34 +51,6 @@
 				</tr>
 			</tbody>
 		</table>
-		</div>
-		<div class="col-3">
-			<div class="row">
-				<div class="col-6">
-					<h3>选择技师</h3>
-				</div>
-			</div>
-			<button type="button" name="staff_selection_button" {% if not previous_service or not previous_service.staff %}class="btn btn-lg btn-primary"{%else%}class="btn btn-lg btn-outline-primary"{%endif%} id="staff_selection_button_0" onclick="select_staff(0)">编号：0<br>无</button>
-			{% for i in staffs %}
-			<button type="button" name="staff_selection_button" {% if previous_service and previous_service.staff.id == i.id%}class="btn btn-lg btn-primary"{%else%}class="btn btn-lg btn-outline-primary"{%endif%} id="staff_selection_button_{{i.id}}" onclick="select_staff({{i.id}})">编号：{{i.id}}<br>{{i.name}}</button>
-			{% endfor %}
-		</div>
-		<div class="col-5">
-			<div class="row">
-				<div class="col-6">
-					<h3>选择项目</h3>
-				</div>
-			</div>
-			<form action="/accounting/cashier/bill/edit?income_id={{income.id}}" id="add_form" method="POST">
-				{% csrf_token %} 	
-				<input type="hidden" name="staff_selection" id="staff_selection_input" value="{%if previous_service%}{{previous_service.staff.id}}{%else%}0{%endif%}" />
-				<input type="hidden" name="service_selection" id="service_selection_input" value="0" />
-				<input type="hidden" name="add_element" value="add_element" />
-				{% for i in items %}
-				<button type="button" onclick="select_service({{i.id}})" class="btn btn-lg btn-outline-primary">编号：{{i.id}}<br>{{i.name}}<br>价格：¥{{i.price|floatformat}}</button>
-				{% endfor %}
-			</form>
-		</div>
 		<div class="container">
 			<form action="/accounting/cashier/bill/pay?income_id={{income.id}}" method="POST">
 				{% csrf_token %}
@@ -117,6 +89,34 @@
 					<button class="btn btn-success" name="pay">确认结账</button>
 					<a href="/accounting/cashier/bill/" class="btn btn-secondary">返回</a>
 				</div>
+			</form>
+		</div>
+		</div>
+		<div class="col-3">
+			<div class="row">
+				<div class="col-6">
+					<h3>选择技师</h3>
+				</div>
+			</div>
+			<button type="button" name="staff_selection_button" {% if not previous_service or not previous_service.staff %}class="btn btn-lg btn-primary"{%else%}class="btn btn-lg btn-outline-primary"{%endif%} id="staff_selection_button_0" onclick="select_staff(0)">编号：0<br>前台</button>
+			{% for i in staffs %}
+			<button type="button" name="staff_selection_button" {% if previous_service and previous_service.staff.id == i.id%}class="btn btn-lg btn-primary"{%else%}class="btn btn-lg btn-outline-primary"{%endif%} id="staff_selection_button_{{i.id}}" onclick="select_staff({{i.id}})">编号：{{i.id}}<br>{{i.name}}</button>
+			{% endfor %}
+		</div>
+		<div class="col-5">
+			<div class="row">
+				<div class="col-6">
+					<h3>选择项目</h3>
+				</div>
+			</div>
+			<form action="/accounting/cashier/bill/edit?income_id={{income.id}}" id="add_form" method="POST">
+				{% csrf_token %} 	
+				<input type="hidden" name="staff_selection" id="staff_selection_input" value="{%if previous_service%}{{previous_service.staff.id}}{%else%}0{%endif%}" />
+				<input type="hidden" name="service_selection" id="service_selection_input" value="0" />
+				<input type="hidden" name="add_element" value="add_element" />
+				{% for i in items %}
+				<button type="button" onclick="select_service({{i.id}})" class="btn btn-lg btn-outline-primary">编号：{{i.id}}<br>{{i.name}}<br>价格：¥{{i.price|floatformat}}</button>
+				{% endfor %}
 			</form>
 		</div>
 	</div>
