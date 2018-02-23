@@ -3,10 +3,12 @@
 {% block content %}
 <div style="background-color: white; padding: 20px;">
 	<div class="row" style="padding: 20px;">
-		<div class="col-6">
-			<p>{{time|date:"Y-m-d"}} 日结账单</p>
+		<div class="col-12"  style="font-size: 9px;">
+			{{time|date:"Y-m-d"}} 日结账单<br>
+			交班人：{{recorder.user.first_name}}({{recorder.user.username}})<br>
+			总数：{{number}}
 		</div>
-		<table class="table" style="font-size: 12px;">
+		<table class="table" style="font-size: 9px;">
 			<thead>
 				<td>编号</td>
 				<td>付款方式</td>

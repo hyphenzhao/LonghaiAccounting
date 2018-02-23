@@ -247,7 +247,9 @@ def cashier_daily(request):
 		"tag":"daily",
 		"totals": total_dict,
 		"final_total": final_total,
-		"time": now().date()
+		"time": now().date(),
+		"recorder": system_user,
+		"number": len(records)
 	}
 	return render(request, "cashier_daily.html", context)
 
