@@ -760,7 +760,7 @@ def admin_VIP_update(request):
 		record.save()
 		note = "更改，"
 		new_vip_record = VIPTopupRecord(
-			vip=vip,
+			vip=record,
 			recorder=system_user,
 			operation=2,
 			note=note
