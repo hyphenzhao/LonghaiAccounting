@@ -452,6 +452,70 @@ def admin_bill_today(request):
 	}
 	return render(request,"admin_bill_today.html", context)
 
+def admin_bill_yesterday(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	end = now().date()
+	start = end + timedelta(days=-1)
+	record = Income.objects.filter(date__range=(start, end)).filter(is_deleted=False).filter(is_paid=True)
+	total = 0
+	if record:
+		for i in record:
+			total = total + i.total
+	context = {
+		"record":record,
+		"tag":"bill",
+		"label": "yesterday",
+		"total":total
+	}
+	return render(request,"admin_bill_today.html", context)
+
+def admin_bill_month(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	month = now().month
+	record = Income.objects.filter(is_deleted=False).filter(is_paid=True).filter(date__month=month)
+	total = 0
+	if record:
+		for i in record:
+			total = total + i.total
+	context = {
+		"record":record,
+		"tag":"bill",
+		"label": "month",
+		"total":total
+	}
+	return render(request,"admin_bill_today.html", context)
+
+def admin_bill_year(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	year = now().year
+	record = Income.objects.filter(date__year=year).filter(is_deleted=False).filter(is_paid=True)
+	total = 0
+	if record:
+		for i in record:
+			total = total + i.total
+	context = {
+		"record":record,
+		"tag":"bill",
+		"label": "year",
+		"total":total
+	}
+	return render(request,"admin_bill_today.html", context)
+
 def admin_member_job(request):
 	if 'user_id' not in request.session:
 		return HttpResponseRedirect('/accounting/')
@@ -705,7 +769,7 @@ def admin_VIP(request):
 		)
 		new_vip_record.save()
 		return HttpResponseRedirect('/accounting/administrator/VIP/')
-	record = VIP.objects.filter(is_deleted=False)
+	record = VIP.objects.filter(is_deleted=False).order_by('card_no')
 	methods = PaymentMethod.objects.filter(is_deleted=False)
 	if VIPPayment.objects.all():
 		current_method = VIPPayment.objects.all().order_by('-id')[0]
@@ -715,9 +779,41 @@ def admin_VIP(request):
 		"record":record,
 		"tag":"vip",
 		"methods": methods,
-		"current_method": current_method
+		"current_method": current_method,
+		"label": "index",
 	}
 	return render(request,"admin_vip.html", context)
+
+def admin_VIP_topuprecord(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	record = VIPTopupRecord.objects.all().order_by('-id')
+	context = {
+		"record":record,
+		"tag":"vip",
+		"label": "topup_record",
+	}
+	return render(request, "admin_vip_topuprecord.html", context)
+
+def admin_VIP_paymentrecord(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	vip_paymethod = VIPPayment.objects.all().order_by('-id')[0]
+	record = Income.objects.filter(is_deleted=False).filter(payment_method__id=vip_paymethod.payment.id).filter(is_paid=True).order_by("-id")
+	context = {
+		"record":record,
+		"tag":"vip",
+		"label": "payment_record",
+	}
+	return render(request, "admin_vip_paymentrecord.html", context)
 
 def admin_VIP_methods(request):
 	if 'user_id' not in request.session:
@@ -753,12 +849,13 @@ def admin_VIP_update(request):
 		new_name = request.POST['name']
 		new_phone = request.POST['phone']
 		new_balance = request.POST['balance']
+		diff = Decimal(new_balance) - record.balance
 		record.card_no = new_no
 		record.holder = new_name
 		record.phone = new_phone
 		record.balance = new_balance
 		record.save()
-		note = "更改，"
+		note = "信息更新，余额变动：" + format(diff,"0.2f") + "元"
 		new_vip_record = VIPTopupRecord(
 			vip=record,
 			recorder=system_user,

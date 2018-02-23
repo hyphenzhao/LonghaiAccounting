@@ -1,36 +1,33 @@
-{% extends "admin_bill_base.html" %}
+{% extends "admin_vip_base.html" %}
 {% load staticfiles %}
 {% block content %}
 <div class="container" style="background-color: white; padding: 20px;">
 	<div class="row" style="padding: 20px;">
 		<div class="col-6">
-			<h3>账目管理</h3>
+			<h3>会员充值管理</h3>
 		</div>
 		<table class="table">
 			<thead>
 				<td>编号</td>
 				<td>时间</td>
-				<td>金额</td>
-				<td>支付方式</td>
+				<td>卡号</td>
+				<td>会员名</td>
 				<td>记录员</td>
 				<td>备注</td>
 			</thead>
 			<tbody>
 				{% for i in record %}
 				<tr>
-					<td>{{i.id}}</td>
+					<td>{{forloop.counter}}</td>
 					<td>{{i.date|date:"Y-m-d H:m"}}</td>
-					<td>{{i.total|floatformat}}</td>
-					<td>{{i.payment_method.name}}</td>
+					<td>{{i.vip.card_no}}</td>
+					<td>{{i.vip.holder}}</td>
 					<td>{{i.recorder.user.first_name}}</td>
-					<td>备注</td>
+					<td>{{i.note}}</td>
 				</tr>
 				{% endfor %}
 			</tbody>
 		</table>
-		<div class="row text-right">
-			总收入：{{total|floatformat}}
-		</div>
 	</div>
 </div>
 {% endblock %}

@@ -16,7 +16,7 @@
 			<tbody>
 				{% for i in record %}
 				<tr>
-					<td>{{i.id}}</td>
+					<td>{{forloop.counter}}</td>
 					<td>{{i.name}}</td>
 					{% if i.real_income %}
 					<td>是</td>

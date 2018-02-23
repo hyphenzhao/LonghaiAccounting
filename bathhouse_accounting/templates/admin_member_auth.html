@@ -22,7 +22,7 @@
 				<tr>
 					<form id="form_{{i.id}}"style="width: 100%;" action="/accounting/administrator/member/auth/" method="POST">
 					{% csrf_token %} 
-						<td>{{i.id}}</td>
+						<td>{{forloop.counter}}</td>
 						<td>{{i.staff.name}}</td>
 						<td><input type="input" name="username_{{i.id}}" value="{{i.user.username}}"/></td>
 						<td><input type="password" name="password_{{i.id}}" /></td>
