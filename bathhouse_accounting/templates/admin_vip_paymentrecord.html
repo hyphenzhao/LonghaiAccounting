@@ -14,6 +14,7 @@
 				<td>卡号</td>
 				<td>会员名</td>
 				<td>记录员</td>
+				<td>操作</td>
 			</thead>
 			<tbody>
 				{% for i in record %}
@@ -24,6 +25,7 @@
 					<td>{{i.vip.card_no}}</td>
 					<td>{{i.vip.holder}}</td>
 					<td>{{i.recorder.user.first_name}}</td>
+					<td><a href="/accounting/administrator/bill/view?income_id={{i.id}}" class="btn btn-primary">查看详细</td>
 				</tr>
 				{% endfor %}
 			</tbody>

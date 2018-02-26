@@ -1,0 +1,61 @@
+{% extends "admin_bill_base.html" %}
+{% load staticfiles %}
+{% block content %}
+
+<div style="background-color: white; padding: 20px;">
+	<div class="row">
+		<div class="row">
+			<div class="col-6">
+				<h5>消费时间：{{record.date|date:"Y-m-d h:m"}} {% if vip_paid %}VIP：{{record.vip.holder}} {% endif %} </h5>
+			</div>
+			<div class="col-6 text-center">
+				{% if error_message %}
+				<div class="alert alert-danger" role="alert"><h5>{{error_message}}</h5></div>
+				{% else %}
+				<div class="alert alert-success" role="alert"><h5>已付款</h5></div>
+				{% endif %}
+			</div>
+			<div class="col-12">
+				<h5>前台：{{record.recorder.user.first_name}} 顾客手牌号：{{record.card_no}}</h5>
+			</div>
+		</div>
+		<table class="table table-condensed table-bordered table-striped">
+			<thead>
+				<td>服务项目名称</td>
+				<td>单价</td>
+				<td>数量</td>
+				<td>技师</td>
+				<td>记录员</td>
+				<td>备注</td>
+			</thead>
+			<tbody>
+				{% for i in services %}
+				<tr>
+					<td>{{i.item.name}}</td>
+					<td>{{i.item.price|floatformat}}</td>
+					<td>{{i.item_no|floatformat}}</td>
+					<td>{{i.staff.name}}</td>
+					<td>{{i.recorder.user.first_name}}</td>
+					<td>
+						{% if i.is_deleted %}
+						<div class="alert alert-danger" role="alert">已删除</div>
+						{% else %}
+						<div class="alert alert-success" role="alert">已付款</div>
+						{% endif %}
+					</td>
+				</tr>
+				{% endfor %}
+				<tr>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td>总金额：</td>
+					<td id="total_payment">{{record.total|floatformat}}</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+<button class="btn btn-secondary" onclick="goBack()">返回</button>
+{% endblock %}

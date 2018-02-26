@@ -18,8 +18,21 @@
 					{% csrf_token %}
 					<label for="topup_balance">充值金额：</label>
 					<input class="form-control" id="topup_balance" name="topup_balance" value="0" />
-					<button class="btn btn-primary">确认充值</button>
-					<a href="/accounting/cashier/VIP/" class="btn btn-secondary">返回</a>
+					<input type="hidden" name="payment_method" id="payment_method" value="{{first_method.id}}"/>
+					<input type="hidden" name="current_method" id="current_method" value="{{current_method.payment.id}}"/>
+					<label for="payment_method">支付方式：</label>
+						{% for i in methods%}
+						{% if i.id != vip_method.id %}
+							{% if i.id == first_method.id %}
+							<button type="button" name="payment_select_button" class="btn btn-lg btn-primary" id="payment_select_button_{{i.id}}" onclick="payment_method_onclick({{i.id}})">{{i.name}}<br></button>
+							{% else %}
+							<button type="button" name="payment_select_button" class="btn btn-lg btn-outline-primary" id="payment_select_button_{{i.id}}" onclick="payment_method_onclick({{i.id}})">{{i.name}}<br></button>
+							{% endif %}
+						{% endif %}
+						{% endfor %}
+					<br>
+					<button class="btn btn-lg btn-success">确认充值</button>
+					<a href="/accounting/cashier/VIP/" class="btn btn-lg btn-secondary">返回</a>
 				</form>
 			</div>
 		</div>

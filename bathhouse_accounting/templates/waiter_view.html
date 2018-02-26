@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block content %}
+<div class="container" style="background-color: white; padding: 20px;">
+	<div class="row" style="padding: 20px;">
+		<div class="row">
+			<a href="/accounting/waiter/order/" class="btn btn-lg btn-secondary">返回</a>
+		</div>
+		<div class="col-12">
+			<h3>今日服务记录</h3>
+		</div>
+		<table class="table">
+			<thead>
+				<td>编号</td>
+				<td>顾客手牌号</td>
+				<td>时间</td>
+				<td>服务名称</td>
+				<td>单价</td>
+				<td>数量</td>
+			</thead>
+			<tbody>
+				{% for i in records %}
+				<tr>
+					<td>{{forloop.counter}}</td>
+					<td>{{i.income.card_no}}</td>
+					<td>{{i.income.date|date:"Y-m-d h:m"}}</td>
+					<td>{{i.item.name}}</td>
+					<td>{{i.item.price|floatformat}}</td>
+					<td>{{i.item_no|floatformat}}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+{% endblock %}

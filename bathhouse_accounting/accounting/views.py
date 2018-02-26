@@ -69,11 +69,27 @@ def waiter_index(request):
 	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
 	if system_user.role != 'waiter' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
-	workers = Staff.objects.filter(is_deleted=False).filter(title__priviledge=100)
+	workers = Staff.objects.filter(is_deleted=False,title__priviledge=100)
 	context = {
 		"workers":workers
 	}
 	return render(request, "waiter_index.html", context)
+
+def waiter_view(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'waiter' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	start = now().date()
+	end = start + timedelta(days=1)
+	staff = Staff.objects.get(pk=request.session['worker_id'])
+	records = Service.objects.filter(is_deleted=False, income__date__range=(start,end),staff=staff)
+	context = {
+		"records": records,
+	}
+	return render(request, "waiter_view.html", context)
 
 def waiter_order(request):
 	if 'user_id' not in request.session:
@@ -84,11 +100,11 @@ def waiter_order(request):
 		return HttpResponseRedirect('/accounting/')
 	if request.method == "POST":
 		request.session['worker_id'] = request.POST['worker_id']
-	else:
+	elif 'worker_id' not in request.session:
 		return HttpResponseRedirect('/accounting/waiter/')
-	incomes = Income.objects.filter(is_deleted=False).filter(is_paid=False)
+	incomes = Income.objects.filter(is_deleted=False,is_paid=False)
 	context = {
-		"incomes":incomes
+		"incomes":incomes,
 	}
 	return render(request, "waiter_order.html", context)
 
@@ -107,7 +123,7 @@ def waiter_order_service(request):
 	income = Income.objects.get(pk=income_id)
 	if income.is_paid or income.is_deleted:
 		return HttpResponseRedirect('/accounting/waiter/')
-	services = Service.objects.filter(income=income).filter(is_deleted=False).order_by("-id")
+	services = Service.objects.filter(income=income,is_deleted=False).order_by("-id")
 	items = Item.objects.filter(is_deleted=False)
 	total = 0
 	if services.exists():
@@ -135,11 +151,11 @@ def waiter_order_service_edit(request):
 	income_id = request.session['income_id']
 	income = Income.objects.get(pk=income_id)
 	staff = Staff.objects.get(pk=staff_id)
-	services = Service.objects.filter(income=income).filter(is_deleted=False).order_by("-id")
+	services = Service.objects.filter(income=income,is_deleted=False).order_by("-id")
 	if request.method == "POST" and "add_element" in request.POST:
 		item_id = request.POST['service_selection']
 		selected_item = Item.objects.get(pk=item_id)
-		exist_service = services.filter(staff=staff).filter(item=selected_item).filter(recorder=system_user)
+		exist_service = services.filter(staff=staff,item=selected_item,recorder=system_user)
 		if exist_service:
 			selected_service = exist_service.order_by('-id')[0]
 			selected_service.item_no = selected_service.item_no + 1
@@ -186,7 +202,15 @@ def cashier_vip_topup(request):
 		return HttpResponseRedirect('/accounting/')
 	vip_id = request.GET['vip_no']
 	vip = VIP.objects.get(pk=vip_id)
+	methods = PaymentMethod.objects.filter(is_deleted=False).order_by('id')
+	if methods:
+		first_method = methods[0]
+	vip_method_exist = VIPPayment.objects.all()
+	if vip_method_exist:
+		vip_method = vip_method_exist.order_by('id')[0].payment
 	if request.method == "POST":
+		payment_method_id = request.POST['payment_method']
+		payment_method = PaymentMethod.objects.get(pk=payment_method_id)
 		total = request.POST['topup_balance']
 		vip.balance = vip.balance + Decimal(total)
 		vip.save()
@@ -194,13 +218,17 @@ def cashier_vip_topup(request):
 			vip=vip,
 			recorder=system_user,
 			operation=2,
-			note="充值" + total,
+			payment_method=payment_method,
+			note="充值" + total + "元，充值方式：" + payment_method.name,
 			)
 		new_record.save()
 		return HttpResponseRedirect('/accounting/cashier/VIP/')
 	context = {
 		"vip":vip,
 		"tag":"vip",
+		"methods": methods,
+		"vip_method": vip_method,
+		"first_method": first_method
 	}
 	return render(request, "cashier_vip_topup.html", context)
 
@@ -212,7 +240,7 @@ def cashier_vip_view(request):
 	if system_user.role != 'cashier' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
 	vip_id = request.GET['vip_no']
-	vips = VIP.objects.filter(is_deleted=False).filter(card_no=vip_id)
+	vips = VIP.objects.filter(is_deleted=False,card_no=vip_id)
 	if vips:
 		vip = vips.order_by('-id')[0]
 	else:
@@ -232,7 +260,7 @@ def cashier_daily(request):
 		return HttpResponseRedirect('/accounting/')
 	start = now().date()
 	end = start + timedelta(days=1)
-	records = Income.objects.filter(date__range=(start, end)).filter(is_deleted=False).filter(is_paid=True).filter(recorder=system_user)
+	records = Income.objects.filter(date__range=(start, end),is_deleted=False,is_paid=True,recorder=system_user)
 	total_dict = {}
 	payment_methods = PaymentMethod.objects.filter(is_deleted=False)
 	final_total = 0
@@ -266,7 +294,7 @@ def cashier_bill(request):
 		income.is_deleted = True
 		income.save()
 		return HttpResponseRedirect('/accounting/cashier/bill/')
-	record = Income.objects.filter(is_deleted=False).filter(is_paid=False)
+	record = Income.objects.filter(is_deleted=False,is_paid=False)
 	female_record = [0 for i in range(49)]
 	male_record = [0 for i in range(61)]
 	for i in record:
@@ -323,10 +351,10 @@ def cashier_bill_edit(request):
 	income = Income.objects.get(pk=income_id)
 	if income.is_paid or income.is_deleted:
 		return HttpResponseRedirect('/accounting/cashier/bill/')
-	services = Service.objects.filter(income=income).filter(is_deleted=False).order_by("-id")
+	services = Service.objects.filter(income=income,is_deleted=False).order_by("-id")
 	items = Item.objects.filter(is_deleted=False)
-	staffs = Staff.objects.filter(title__priviledge=100).filter(is_deleted=False)
-	payment_methods = PaymentMethod.objects.filter(is_deleted=False)
+	staffs = Staff.objects.filter(title__priviledge=100,is_deleted=False)
+	payment_methods = PaymentMethod.objects.filter(is_deleted=False).order_by("id")
 	current_method = VIPPayment.objects.all().order_by('-id')[0]
 	total = 0
 	previous_service = None
@@ -340,9 +368,9 @@ def cashier_bill_edit(request):
 		selected_item = Item.objects.get(pk=item_id)
 		if staff_id != "0" and staff_id != "":
 			selected_staff = Staff.objects.get(pk=staff_id)
-			exist_service = services.filter(staff=selected_staff).filter(item=selected_item).filter(recorder=system_user)
+			exist_service = services.filter(staff=selected_staff,item=selected_item,recorder=system_user)
 		else:
-			exist_service = services.filter(item=selected_item).filter(recorder=system_user)
+			exist_service = services.filter(item=selected_item,recorder=system_user)
 		if exist_service:
 			selected_service = exist_service.order_by('-id')[0]
 			selected_service.item_no = selected_service.item_no + 1
@@ -374,6 +402,9 @@ def cashier_bill_edit(request):
 			delete_service.is_deleted = True
 		delete_service.save()
 		return HttpResponseRedirect('/accounting/cashier/bill/edit?income_id=' + income_id)
+	first_method = 0
+	if payment_methods:
+		first_method = payment_methods[0]
 	context = {
 		"tag":"bill",
 		"items":items,
@@ -384,6 +415,7 @@ def cashier_bill_edit(request):
 		"current_user": system_user,
 		"methods": payment_methods,
 		"current_method": current_method,
+		"first_method": first_method,
 		"previous_service": previous_service
 	}
 	return render(request, "cashier_bill_edit.html", context)
@@ -399,7 +431,7 @@ def cashier_bill_pay(request):
 	income = Income.objects.get(pk=income_id)
 	if income.is_paid or income.is_deleted:
 		return HttpResponseRedirect('/accounting/cashier/bill/')
-	services = Service.objects.filter(income=income).filter(is_deleted=False)
+	services = Service.objects.filter(income=income,is_deleted=False)
 	payment_methods = PaymentMethod.objects.filter(is_deleted=False)
 	current_method = VIPPayment.objects.all().order_by('-id')[0]
 	total = 0
@@ -464,6 +496,63 @@ def admin_bill_index(request):
 		return HttpResponseRedirect('/accounting/')
 	return HttpResponseRedirect('/accounting/administrator/bill/today/')
 
+def admin_bill_droped(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	record = Income.objects.filter(is_deleted=True).order_by('-date')
+	context = {
+		"record":record,
+		"tag":"bill",
+		"label": "drop",
+	}
+	return render(request, "admin_bill_today.html", context)
+
+def admin_bill_deleted(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	records = Service.objects.filter(is_deleted=True).order_by('-id')
+	context = {
+		"records":records,
+		"tag":"bill",
+		"label": "delete",
+	}
+	return render(request, "admin_bill_deleted.html", context)
+
+def admin_bill_view(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	income_id = request.GET['income_id']
+	record = Income.objects.get(pk=income_id)
+	vip_pay = VIPPayment.objects.all().order_by('id')[0]
+	vip_paid = False
+	if record.payment_method == vip_pay.payment:
+		vip_paid = True
+	services = Service.objects.filter(income=record)
+	error_message = None
+	if record.is_deleted:
+		error_message = "已删除"
+	context = {
+		"tag":"bill",
+		"label": "view_detail",
+		"services": services,
+		"record": record,
+		"vip_paid": vip_paid,
+		"error_message": error_message
+	}
+	return render(request, "admin_bill_view.html", context)
+
 def admin_bill_today(request):
 	if 'user_id' not in request.session:
 		return HttpResponseRedirect('/accounting/')
@@ -473,7 +562,7 @@ def admin_bill_today(request):
 		return HttpResponseRedirect('/accounting/')
 	start = now().date()
 	end = start + timedelta(days=1)
-	record = Income.objects.filter(date__range=(start, end)).filter(is_deleted=False).filter(is_paid=True)
+	record = Income.objects.filter(date__range=(start, end),is_deleted=False,is_paid=True).order_by('-date')
 	total = 0
 	if record:
 		for i in record:
@@ -495,7 +584,7 @@ def admin_bill_yesterday(request):
 		return HttpResponseRedirect('/accounting/')
 	end = now().date()
 	start = end + timedelta(days=-1)
-	record = Income.objects.filter(date__range=(start, end)).filter(is_deleted=False).filter(is_paid=True)
+	record = Income.objects.filter(date__range=(start, end),is_deleted=False,is_paid=True).order_by('-date')
 	total = 0
 	if record:
 		for i in record:
@@ -515,8 +604,12 @@ def admin_bill_month(request):
 	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
-	month = now().month
-	record = Income.objects.filter(is_deleted=False).filter(is_paid=True).filter(date__month=month)
+	month = str(now().year)
+	if now().month < 10:
+		month = month + '-0' + str(now().month)
+	else:
+		month = month + '-' + str(now().month)
+	record = Income.objects.filter(is_deleted=False,is_paid=True,date__startswith=month).order_by('-date')
 	total = 0
 	if record:
 		for i in record:
@@ -525,7 +618,7 @@ def admin_bill_month(request):
 		"record":record,
 		"tag":"bill",
 		"label": "month",
-		"total":total
+		"total":total,
 	}
 	return render(request,"admin_bill_today.html", context)
 
@@ -537,7 +630,7 @@ def admin_bill_year(request):
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
 	year = now().year
-	record = Income.objects.filter(date__year=year).filter(is_deleted=False).filter(is_paid=True)
+	record = Income.objects.filter(date__year=year,is_deleted=False,is_paid=True).order_by('-date')
 	total = 0
 	if record:
 		for i in record:
@@ -713,6 +806,37 @@ def admin_payment_method(request):
 		payment_method.is_deleted = True
 		payment_method.save()
 		return HttpResponseRedirect('/accounting/administrator/payment-method/')
+	if request.method == "POST" and "up_element" in request.POST:
+		item_id = request.POST['item_no']
+		items = PaymentMethod.objects.filter(is_deleted=False).order_by("id")
+		current_item = PaymentMethod.objects.get(pk=item_id)
+		pre_item = items[0]
+		for i in items:
+			if i.id == current_item.id:
+				vip_check = False
+				is_vip_payment = VIPPayment.objects.filter(payment=pre_item)
+				if is_vip_payment:
+					vip_payment = is_vip_payment.order_by("id")[0]
+					vip_payment.payment_id = current_item.id
+					vip_payment.save()
+					vip_check = True
+				is_vip_payment = VIPPayment.objects.filter(payment=current_item)
+				if not vip_check and is_vip_payment:
+					vip_payment = is_vip_payment.order_by("id")[0]
+					vip_payment.payment_id = pre_item.id
+					vip_payment.save()
+				pre_item_id = pre_item.id
+				pre_item.id = 1000000
+				pre_item.save()
+				current_item.id = pre_item_id
+				current_item.save()
+				pre_item.id = item_id
+				pre_item.save()
+				item = PaymentMethod.objects.get(pk=1000000)
+				item.delete()
+				return HttpResponseRedirect('/accounting/administrator/payment-method/#form_' + str(current_item.id))
+			else:
+				pre_item = i
 	record = PaymentMethod.objects.filter(is_deleted=False)
 	context = {
 		"record":record,
@@ -860,7 +984,7 @@ def admin_VIP_paymentrecord(request):
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
 	vip_paymethod = VIPPayment.objects.all().order_by('-id')[0]
-	record = Income.objects.filter(is_deleted=False).filter(payment_method__id=vip_paymethod.payment.id).filter(is_paid=True).order_by("-id")
+	record = Income.objects.filter(is_deleted=False,payment_method__id=vip_paymethod.payment.id,is_paid=True).order_by("-id")
 	context = {
 		"record":record,
 		"tag":"vip",

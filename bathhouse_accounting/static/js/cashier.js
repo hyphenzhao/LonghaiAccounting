@@ -28,7 +28,34 @@ function payment_method_alter() {
 		auth_submit.value = "";
 	}
 }
-
+function payment_method_onclick(id) {
+	var allButtons = document.getElementsByName("payment_select_button");
+	for(var i = 0; i < allButtons.length; i++) {
+		allButtons[i].setAttribute("class", "btn btn-lg btn-outline-primary");
+	}
+	var payment_method = document.getElementById("payment_method");
+	payment_method.value = id;
+	var selectedButton = document.getElementById("payment_select_button_" + id);
+	selectedButton.setAttribute("class", "btn btn-lg btn-primary");
+	var current_method = document.getElementById("current_method");
+	if(id == current_method.value) {
+		var auth_method = document.getElementById("payment_auth_method");
+		var card_pay = document.getElementById("payment_auth_card");
+		var auth_submit = document.getElementById("payment_auth_method_selection");
+		auth_method.removeAttribute("hidden");
+		card_pay.removeAttribute("hidden");
+		auth_submit.value = "card";
+	} else {
+		var auth_method = document.getElementById("payment_auth_method");
+		var card_pay = document.getElementById("payment_auth_card");
+		var phone_pay = document.getElementById("payment_auth_phone");
+		var auth_submit = document.getElementById("payment_auth_method_selection");
+		auth_method.setAttribute("hidden","");
+		card_pay.setAttribute("hidden","");
+		phone_pay.setAttribute("hidden","");
+		auth_submit.value = "";
+	}
+}
 function auth_method_alter() {
 	var auth1 = document.getElementById("payment_auth_1");
 	var auth2 = document.getElementById("payment_auth_2");
@@ -83,7 +110,7 @@ function service_onchange(id) {
 }
 
 function select_staff(id) {
-	allButtons = document.getElementsByName("staff_selection_button");
+	var allButtons = document.getElementsByName("staff_selection_button");
 	for(var i = 0; i < allButtons.length; i++) {
 		allButtons[i].setAttribute("class", "btn btn-lg btn-outline-primary");
 	}

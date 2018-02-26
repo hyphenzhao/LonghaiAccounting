@@ -30,6 +30,14 @@
 							<input type="hidden" name="delete_element" value="delete_element" />
 							<button class='btn btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{i.id}}')">删除</button>
 						</form>
+						<br>
+						{% if forloop.counter != 1%}
+						<form style="width: 100%;" action="/accounting/administrator/payment-method/" method="POST">
+						{% csrf_token %} 
+							<input type="hidden" id="item_no" name="item_no" value="{{i.id}}" />
+							<button class='btn btn-outline-primary' name="up_element">上移</button>
+						</form>
+						{% endif %}
 					</td>
 				</tr>
 				{% endfor %}

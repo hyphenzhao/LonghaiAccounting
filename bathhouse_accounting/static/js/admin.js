@@ -1,4 +1,7 @@
 var index = 1;
+function goBack() {
+	window.history.back();
+}
 function add_new_service_item() {
 	var ready_add_table = document.getElementById("ready-add-table");
 	var new_row = document.createElement("tr");

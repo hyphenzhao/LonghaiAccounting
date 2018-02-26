@@ -73,7 +73,12 @@ class VIPTopupRecord(models.Model):
 	operation = models.IntegerField()
 	note = models.CharField(max_length=60)
 	date = models.DateTimeField(auto_now_add=True, blank=True)
-
+	payment_method = models.ForeignKey(
+			PaymentMethod,
+			on_delete=models.CASCADE,
+			null=True
+		)
+	
 class Income(models.Model):
 	customer_name = models.CharField(max_length=60, null=True)
 	# false = male, true = female

@@ -8,14 +8,8 @@
 </script>
 <div style="background-color: white; padding: 20px;">
 	<div class="row" style="padding: 20px;">
-		<div class="col-12 form-inline">
+		<div class="col-6">
 			<h3>{{income.card_no|add:'1'}}号顾客账单</h3>
-			<form action="/accounting/cashier/bill/" id="form_{{income.id}}" method="POST">
-				{% csrf_token %}
-				<input type="hidden" name="income_id" value="{{income.id}}" />
-				<input type="hidden" name="delete_element"/>
-				<button class='btn btn-lg btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{income.id}}')">销卡</button>
-			</form>
 		</div>
 	</div>
 
@@ -61,19 +55,17 @@
 			<form action="/accounting/cashier/bill/pay?income_id={{income.id}}" method="POST">
 				{% csrf_token %}
 				<div class="row">
-					<div class="col-12">
-						<input type="hidden" name="payment_method" id="payment_method" value="{{first_method.id}}"/>
-						<input type="hidden" name="current_method" id="current_method" value="{{current_method.payment.id}}"/>
+					<div class="col-4">
 						<label for="payment_method">支付方式：</label>
-						{% for i in methods%}
-							{% if i.id == first_method.id %}
-							<button type="button" name="payment_select_button" class="btn btn-lg btn-primary" id="payment_select_button_{{i.id}}" onclick="payment_method_onclick({{i.id}})">{{i.name}}<br></button>
-							{% else %}
-							<button type="button" name="payment_select_button" class="btn btn-lg btn-outline-primary" id="payment_select_button_{{i.id}}" onclick="payment_method_onclick({{i.id}})">{{i.name}}<br></button>
-							{% endif %}
+						<select class="custom-select" name="payment_method" id="payment_method" onchange="payment_method_alter()">
+						{% for i in methods %}
+							<option value="{{i.id}}"{% if current_method.payment.id == i.id %} id="current_method"{% endif %}>
+								{{i.name}}
+							</option>
 						{% endfor %}
+						</select>
 					</div>
-					<div class="col-6" id="payment_auth_method" hidden>
+					<div class="col-4" id="payment_auth_method" hidden>
 						<div class="form-check">
 							<input class="form-check-input" type="radio" name="payment_auth" id="payment_auth_1" onchange="auth_method_alter()" checked><label class="form-check-label" for="payment_auth_1">刷卡支付</label>
 						</div>
@@ -81,11 +73,11 @@
 							<input class="form-check-input" type="radio" name="payment_auth" id="payment_auth_2" onchange="auth_method_alter()"><label class="form-check-label" for="payment_auth_2">手机号/密码支付</label>
 						</div>
 					</div>
-					<div class="col-6" id="payment_auth_card" hidden>
+					<div class="col-4" id="payment_auth_card" hidden>
 						<label for="vip_card_no">刷卡支付：</label>
 						<input class="form-control" type="input" id="vip_card_no" name="vip_card_no" />
 					</div>
-					<div class="col-6" id="payment_auth_phone" hidden>
+					<div class="col-4" id="payment_auth_phone" hidden>
 						<label for="phone_no">手机号：</label>
 						<input class="form-control" type="input" id="phone_no" name="phone_no" />
 						<label for="phone_password">密码：</label>
@@ -94,8 +86,8 @@
 				</div>
 				<div class="container text-center">
 					<input type="hidden" name="payment_auth_method_selection" id="payment_auth_method_selection" value=""/>
-					<button class="btn btn-lg btn-success" name="pay">确认结账</button>
-					<a href="/accounting/cashier/bill/" class="btn btn-lg btn-secondary">返回</a>
+					<button class="btn btn-success" name="pay">确认结账</button>
+					<a href="/accounting/cashier/bill/" class="btn btn-secondary">返回</a>
 				</div>
 			</form>
 		</div>

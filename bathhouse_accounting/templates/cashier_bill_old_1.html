@@ -1,0 +1,85 @@
+{% extends "cashier_base.html" %}
+{% load staticfiles %}
+{% load accounting_extras %}
+{% block content %}
+<div style="background-color: white; padding: 30px;">
+	<div class="row">
+		<div class="col-6">
+			<div class="row">
+				<div class="row">
+					<h1 style="color: blue;">男浴</h1>
+				</div>
+				<div class="row">
+			{% for i in male_range %}
+			<div class="card text-center">
+				<div class="card-header">
+				</div>
+				<div class="card-body" {% if male_record|return_item:i != 0 %}style="background-color: lightblue;"{% endif %}>
+					<h2 style="color: blue;">{{i|add:'1'}}</h2>
+				</div>
+				<div class="card-footer">
+					{% if male_record|return_item:i != 0 %}
+						<div class="row">
+						<a class="btn btn-warning" href="/accounting/cashier/bill/edit?income_id={{male_record|return_item:i}}">查看/结账</a>
+						<form action="/accounting/cashier/bill/" id="form_{{male_record|return_item:i}}" method="POST">
+							{% csrf_token %}
+							<input type="hidden" name="income_id" value="{{male_record|return_item:i}}" />
+							<input type="hidden" name="delete_element"/>
+							<button class='btn btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{male_record|return_item:i}}')">销卡</button>
+						</form>
+						</div>	
+					{% else %}
+						<form action="/accounting/cashier/bill/create/" method="POST">
+							{% csrf_token %}
+							<input type="hidden" name="card_no" value="{{i}}" />
+							<input type="hidden" name="item_no" value="{{0}}" />
+							<button class="btn btn-success">开卡</button>
+						</form>
+					{% endif %}
+				</div>
+			</div>
+			{% endfor %}
+				</div>
+			</div>
+		</div>
+		<div class="col-6">
+			<div class="row">
+				<div class="row">
+					<h1 style="color: red;">女浴</h1>
+				</div>
+				<div class="row">
+			{% for i in female_range %}
+			<div class="card text-center">
+				<div class="card-header">
+				</div>
+				<div class="card-body" {% if female_record|return_item:i != 0 %}style="background-color: #FDD017;"{% endif %}>
+					<h2 style="color: red;">{{i|add:'1'}}</h2>
+				</div>
+				<div class="card-footer">
+					{% if female_record|return_item:i != 0 %}
+						<div class="row">
+						<a class="btn btn-warning" href="/accounting/cashier/bill/edit?income_id={{female_record|return_item:i}}">查看/结账</a>
+						<form action="/accounting/cashier/bill/" id="form_{{female_record|return_item:i}}" method="POST">
+							{% csrf_token %}
+							<input type="hidden" name="income_id" value="{{female_record|return_item:i}}" />
+							<input type="hidden" name="delete_element"/>
+							<button class='btn btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{female_record|return_item:i}}')">销卡</button>
+						</form>
+						</div>
+					{% else %}
+						<form action="/accounting/cashier/bill/create/" method="POST">
+							{% csrf_token %}
+							<input type="hidden" name="card_no" value="{{i}}" />
+							<input type="hidden" name="item_no" value="{{1}}" />
+							<button class="btn btn-success">开卡</button>
+						</form>
+					{% endif %}
+				</div>
+			</div>
+			{% endfor %}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}
