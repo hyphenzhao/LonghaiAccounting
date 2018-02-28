@@ -539,7 +539,7 @@ def admin_bill_search(request):
 		"error_message":"无记录！"
 		}
 		return render(request, "admin_bill_search.html", context)
-	today = now()
+	today = datetime(now().year, now().month, now().day, 23, 59, 59, tzinfo=utc)
 	first_day = first_income.date
 	if request.method == "POST":
 		start_year = request.POST['start_year']
@@ -550,8 +550,8 @@ def admin_bill_search(request):
 		end_day = request.POST['end_day']
 		staff_id = request.POST['staff_filter']
 		payment_id = request.POST['payment_filter']
-		start_date = datetime(int(start_year), int(start_month), int(start_day),tzinfo=utc)
-		end_date = datetime(int(end_year), int(end_month), int(end_day),tzinfo=utc)
+		start_date = datetime(int(start_year), int(start_month), int(start_day), tzinfo=utc)
+		end_date = datetime(int(end_year), int(end_month), int(end_day), 23, 59, 59, tzinfo=utc)
 		if start_date <= end_date and start_date <= today and end_date <= today:
 			if staff_id != "0" and payment_id != "0":
 				staff = Staff.objects.get(pk=staff_id)
