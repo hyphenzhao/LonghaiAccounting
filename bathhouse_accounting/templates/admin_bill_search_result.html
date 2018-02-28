@@ -1,0 +1,54 @@
+{% extends "admin_bill_base.html" %}
+{% load staticfiles %}
+{% load accounting_extras %}
+{% block content %}
+<div class="container" style="background-color: white; padding: 20px;">
+	<div class="row" style="padding: 20px;">
+		<div class="col-12">
+			<div class="form-inline">
+				<h3>账目查询</h3><a class="btn btn-secondary" href="/accounting/administrator/bill/search/">返回</a>
+			</div>
+			<h5 style="padding: 10px;">查询时间：{{start_date|date:"Y-m-d"}} - {{end_date|date:"Y-m-d"}}</h5>
+			<h5 style="padding: 10px;">总金额：{{all_total|floatformat}}<br>人工总成本：{{labour_cost|floatformat}}</h5>
+		</div>
+		<div class="col-6 text-right">
+			{% if total %}
+			<h3>总收入：{{total|floatformat}}</h3>
+			{% endif %}
+		</div>
+		<table class="table">
+			<thead>
+				<td>编号</td>
+				<td>手牌</td>
+				<td>服务名称</td>
+				<td>时间</td>
+				<td>金额</td>
+				<td>支付方式</td>
+				<td>技师</td>
+				<td>分成比例</td>
+			</thead>
+			<tbody>
+				{% for i in services %}
+				<tr>
+					<td>{{forloop.counter}}</td>
+					<td>{{i.income.card_no}}</td>
+					<td>{{i.item.name}}</td>
+					<td>{{i.income.date|date:"Y-m-d H:m"}}</td>
+					<td>
+						{% with total=i.item.price|multiply:i.item_no %}
+							{{total|floatformat}}
+						{% endwith %}
+					</td>
+					<td>{{i.income.payment_method.name}}</td>
+					<td>{{i.staff.name}}</td>
+					<td>{{i.item.promote_ratio|floatformat}}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		<div class="col-12 text-center">
+			<a class="btn btn-secondary" href="/accounting/administrator/bill/search/">返回</a>
+		</div>
+	</div>
+</div>
+{% endblock %}

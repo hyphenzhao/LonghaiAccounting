@@ -11,6 +11,27 @@
 			<h3>总收入：{{total|floatformat}}</h3>
 			{% endif %}
 		</div>
+		<div class="col-12 text-center">
+			<div class="btn-group">
+				{% for i in pages_number %}
+					{% if label == "today" %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/bill/today?page={{i}}">{{i|add:"1"}}</a>
+					{% endif %}
+					{% if label == "yesterday" %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/bill/yesterday?page={{i}}">{{i|add:"1"}}</a>
+					{% endif %}
+					{% if label == "month" %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/bill/month?page={{i}}">{{i|add:"1"}}</a>
+					{% endif %}
+					{% if label == "year" %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/bill/year?page={{i}}">{{i|add:"1"}}</a>
+					{% endif %}
+					{% if label == "drop" %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/bill/droped?page={{i}}">{{i|add:"1"}}</a>
+					{% endif %}
+				{% endfor %}
+			</div>
+		</div>
 		<table class="table">
 			<thead>
 				<td>编号</td>
@@ -24,12 +45,19 @@
 			<tbody>
 				{% for i in record %}
 				<tr>
-					<td>{{forloop.counter}}</td>
+					<td>
+						{% if base_no %}
+							{{forloop.counter|add:base_no}}
+						{% else %}
+							{{forloop.counter}}
+						{% endif %}
+					</td>
 					<td>{{i.date|date:"Y-m-d H:m"}}</td>
 					<td>{{i.total|floatformat}}</td>
 					<td>{{i.payment_method.name}}</td>
 					<td>{{i.recorder.user.first_name}}</td>
-					<td><a href="/accounting/administrator/bill/view?income_id={{i.id}}" class="btn btn-primary">查看详细</td>
+					<td><a href="/accounting/administrator/bill/view?income_id={{i.id}}" class="btn btn-primary">查看详细</a>
+					</td>
 					<td>
 						{% if i.is_deleted %}
 						<div class="alert alert-danger" role="alert">已销台</div>
@@ -41,7 +69,27 @@
 				{% endfor %}
 			</tbody>
 		</table>
-		
+		<div class="col-12 text-center">
+			<div class="btn-group">
+				{% for i in pages_number %}
+					{% if label == "today" %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/bill/today?page={{i}}">{{i|add:"1"}}</a>
+					{% endif %}
+					{% if label == "yesterday" %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/bill/yesterday?page={{i}}">{{i|add:"1"}}</a>
+					{% endif %}
+					{% if label == "month" %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/bill/month?page={{i}}">{{i|add:"1"}}</a>
+					{% endif %}
+					{% if label == "year" %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/bill/year?page={{i}}">{{i|add:"1"}}</a>
+					{% endif %}
+					{% if label == "drop" %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/bill/droped?page={{i}}">{{i|add:"1"}}</a>
+					{% endif %}
+				{% endfor %}
+			</div>
+		</div>
 	</div>
 </div>
 {% endblock %}

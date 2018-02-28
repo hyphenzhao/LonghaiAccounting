@@ -18,7 +18,7 @@
 			<tbody>
 				{% for i in record %}
 				<tr>
-					<td>{{i.id}}</td>
+					<td>{{forloop.counter}}</td>
 					<td>{{i.name}}</td>
 					<td>{{i.price|floatformat}}</td>
 					<td>{{i.cost|floatformat}}</td>

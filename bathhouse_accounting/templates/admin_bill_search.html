@@ -1,0 +1,87 @@
+{% extends "admin_bill_base.html" %}
+{% load staticfiles %}
+{% block content %}
+<div class="container" style="background-color: white;">
+	{% if error_message %}
+		<div class="alert alert-danger">{{error_message}}</div>
+	{% endif %}
+	<form action="/accounting/administrator/bill/search/" method="POST" class="form-control">
+		{% csrf_token %}
+		<div class="row">
+			<div class="col-2">
+				<p>开始时间：</p>
+			</div>
+			<div class="col-3">
+				<input class="form-control" type="number" name="start_year" value="{{today.year}}"/>
+			</div>
+			<div class="col-1">
+				<p>年</p>
+			</div>
+			<div class="col-2">
+				<input class="form-control" type="number" name="start_month" value="{{today.month}}"/>
+			</div>
+			<div class="col-1">
+				<p>月</p>
+			</div>
+			<div class="col-2">
+				<input class="form-control" type="number" name="start_day" value="{{today.day}}"/>
+			</div>
+			<div class="col-1">
+				<p>日</p>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-2">
+				<p>结束时间：</p>
+			</div>
+			<div class="col-3">
+				<input class="form-control" type="number" name="end_year" value="{{today.year}}" />
+			</div>
+			<div class="col-1">
+				<p>年</p>
+			</div>
+			<div class="col-2">
+				<input class="form-control" type="number" name="end_month" value="{{today.month}}"/>
+			</div>
+			<div class="col-1">
+				<p>月</p>
+			</div>
+			<div class="col-2">
+				<input class="form-control" type="number" name="end_day" value="{{today.day}}"/>
+			</div>
+			<div class="col-1">
+				<p>日</p>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-2">
+				<p>技师筛选：</p>
+			</div>
+			<div class="col-4">
+				<select name="staff_filter" class="custom-select">
+					<option value="0">全部</option>
+					{% for i in servants %}
+					<option value="{{i.id}}">{{i.name}}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="col-2">
+				<p>支付方式筛选：</p>
+			</div>
+			<div class="col-4">
+				<select name="payment_filter" class="custom-select">
+					<option value="0">全部</option>
+					{% for i in methods %}
+					<option value="{{i.id}}">{{i.name}}</option>
+					{% endfor %}
+				</select>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-12 text-center">
+				<button class="btn btn-success">开始查询</button>
+			</div>
+		</div>
+	</form>
+</div>
+{% endblock %}

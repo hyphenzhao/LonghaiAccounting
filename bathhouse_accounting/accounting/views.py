@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import pytz
+import math
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth import authenticate
 from django.utils.timezone import now, timedelta
+from datetime import datetime
 from .models import *
 from decimal import *
+
+utc=pytz.UTC
 
 def logout(request):
 	del request.session["user_id"]
@@ -293,6 +298,10 @@ def cashier_bill(request):
 		income = Income.objects.get(pk=income_id)
 		income.is_deleted = True
 		income.save()
+		related_services = Service.objects.filter(is_deleted=False, income=income)
+		for i in related_services:
+			i.is_deleted = True
+			i.save()
 		return HttpResponseRedirect('/accounting/cashier/bill/')
 	record = Income.objects.filter(is_deleted=False,is_paid=False)
 	female_record = [0 for i in range(49)]
@@ -444,14 +453,14 @@ def cashier_bill_pay(request):
 			auth_check = False
 			if vip_pay == "card":
 				card_no = request.POST['vip_card_no']
-				vip_user = VIP.objects.filter(card_no=card_no)
+				vip_user = VIP.objects.filter(is_deleted=False, card_no=card_no)
 				if vip_user:
 					vip = vip_user.order_by('-id')[0]
 					auth_check = True
 			elif vip_pay == "phone":
 				phone = request.POST['phone_no']
 				password = request.POST['phone_password']
-				vip_user = VIP.objects.filter(phone=phone)
+				vip_user = VIP.objects.filter(is_deleted=False, phone=phone)
 				if vip_user and vip_user.order_by('-id')[0].password == password:
 					vip = vip_user.order_by('-id')[0]
 					auth_check = True
@@ -468,7 +477,19 @@ def cashier_bill_pay(request):
 				income.save()
 				return HttpResponseRedirect('/accounting/cashier/bill/')
 			else:
-				return HttpResponseRedirect('/accounting/cashier/bill/edit?income_id=' + income_id)
+				vip = None
+				if auth_check:
+					error_message = "余额不足，请充值后支付"
+					vip = vip_user.order_by('-id')[0]
+				else:
+					error_message = "用户不存在，请返回重新刷卡"
+				context = {
+					"tag":"vip",
+					"error_message": error_message,
+					"vip": vip,
+					"income_id": income_id
+				}
+				return render(request, "cashier_vip_pay_failed.html", context)
 		else:
 			payment_method_id = request.POST['payment_method']
 			payment_method = PaymentMethod.objects.get(pk=payment_method_id)
@@ -496,6 +517,91 @@ def admin_bill_index(request):
 		return HttpResponseRedirect('/accounting/')
 	return HttpResponseRedirect('/accounting/administrator/bill/today/')
 
+def admin_bill_search(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	servants = Staff.objects.filter(is_deleted=False, title__priviledge=100)
+	methods = PaymentMethod.objects.filter(is_deleted=False)
+	incomes = Income.objects.all().order_by("date")
+	if incomes:
+		first_income = incomes[0]
+	else:
+		context = {
+		"tag": "bill",
+		"label": "search",
+		"servants": servants,
+		"methods": methods,
+		"today": today,
+		"error_message":"无记录！"
+		}
+		return render(request, "admin_bill_search.html", context)
+	today = now()
+	first_day = first_income.date
+	if request.method == "POST":
+		start_year = request.POST['start_year']
+		start_month = request.POST['start_month']
+		start_day = request.POST['start_day']
+		end_year = request.POST['end_year']
+		end_month = request.POST['end_month']
+		end_day = request.POST['end_day']
+		staff_id = request.POST['staff_filter']
+		payment_id = request.POST['payment_filter']
+		start_date = datetime(int(start_year), int(start_month), int(start_day),tzinfo=utc)
+		end_date = datetime(int(end_year), int(end_month), int(end_day),tzinfo=utc)
+		if start_date <= end_date and start_date <= today and end_date <= today:
+			if staff_id != "0" and payment_id != "0":
+				staff = Staff.objects.get(pk=staff_id)
+				payment = PaymentMethod.objects.get(pk=payment_id)
+				services = Service.objects.filter(income__is_deleted=False, is_deleted=False, income__date__range=(start_date, end_date),staff=staff, income__payment_method=payment)
+			elif staff_id != "0":
+				staff = Staff.objects.get(pk=staff_id)
+				services = Service.objects.filter(income__is_deleted=False, is_deleted=False, income__date__range=(start_date, end_date),staff=staff)
+			elif payment_id != "0":
+				payment = PaymentMethod.objects.get(pk=payment_id)
+				services = Service.objects.filter(income__is_deleted=False, is_deleted=False, income__date__range=(start_date, end_date), income__payment_method=payment)
+			else:
+				services = Service.objects.filter(income__is_deleted=False, is_deleted=False, income__date__range=(start_date, end_date))
+			all_total = 0
+			labour_cost = 0
+			for i in services:
+				all_total = all_total + i.item.price * i.item_no
+				labour_cost = labour_cost + i.item.price * i.item_no * i.item.promote_ratio
+			context = {
+				"tag": "bill",
+				"label": "search",
+				"servants": servants,
+				"methods": methods,
+				"today": today,
+				"services": services,
+				"all_total": all_total,
+				"labour_cost": labour_cost,
+				"start_date": start_date,
+				"end_date": end_date
+			}
+			return render(request, "admin_bill_search_result.html", context)
+		else:
+			context = {
+				"tag": "bill",
+				"label": "search",
+				"servants": servants,
+				"methods": methods,
+				"today": today,
+				"error_message":"时间输入错误，无记录！"
+			}
+			return render(request, "admin_bill_search.html", context)
+	context = {
+		"tag": "bill",
+		"label": "search",
+		"servants": servants,
+		"methods": methods,
+		"today": today
+	}
+	return render(request, "admin_bill_search.html", context)
+
 def admin_bill_droped(request):
 	if 'user_id' not in request.session:
 		return HttpResponseRedirect('/accounting/')
@@ -504,10 +610,27 @@ def admin_bill_droped(request):
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
 	record = Income.objects.filter(is_deleted=True).order_by('-date')
+	pages_number = 0
+	start_no = 0
+	page_no = 0
+	if len(record) > 50:
+		pages_number = int(math.ceil(len(record)/50.0))
+		if "page" not in request.GET:
+			return HttpResponseRedirect("/accounting/administrator/bill/droped?page=0")
+	if "page" in request.GET:
+		page_no = int(request.GET['page'])
+		start_no = page_no * 50
+		if len(record) - start_no >= 50:
+			record = record[start_no:start_no + 50]
+		else:
+			record = record[start_no:]
 	context = {
 		"record":record,
 		"tag":"bill",
 		"label": "drop",
+		"base_no": start_no,
+		"pages_number": range(pages_number),
+		"page_no": page_no
 	}
 	return render(request, "admin_bill_today.html", context)
 
@@ -519,10 +642,27 @@ def admin_bill_deleted(request):
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
 	records = Service.objects.filter(is_deleted=True).order_by('-id')
+	pages_number = 0
+	start_no = 0
+	page_no = 0
+	if len(records) > 50:
+		pages_number = int(math.ceil(len(records)/50.0))
+		if "page" not in request.GET:
+			return HttpResponseRedirect("/accounting/administrator/bill/deleted?page=0")
+	if "page" in request.GET:
+		page_no = int(request.GET['page'])
+		start_no = page_no * 50
+		if len(records) - start_no >= 50:
+			records = records[start_no:start_no + 50]
+		else:
+			records = records[start_no:]
 	context = {
 		"records":records,
 		"tag":"bill",
 		"label": "delete",
+		"page_no": page_no,
+		"pages_number": range(pages_number),
+		"base_no": start_no,
 	}
 	return render(request, "admin_bill_deleted.html", context)
 
@@ -549,7 +689,7 @@ def admin_bill_view(request):
 		"services": services,
 		"record": record,
 		"vip_paid": vip_paid,
-		"error_message": error_message
+		"error_message": error_message,
 	}
 	return render(request, "admin_bill_view.html", context)
 
@@ -567,11 +707,28 @@ def admin_bill_today(request):
 	if record:
 		for i in record:
 			total = total + i.total
+	pages_number = 0
+	start_no = 0
+	page_no = 0
+	if len(record) > 50:
+		pages_number = int(math.ceil(len(record)/50.0))
+		if "page" not in request.GET:
+			return HttpResponseRedirect("/accounting/administrator/bill/today?page=0")
+	if "page" in request.GET:
+		page_no = int(request.GET['page'])
+		start_no = page_no * 50
+		if len(record) - start_no >= 50:
+			record = record[start_no:start_no + 50]
+		else:
+			record = record[start_no:]
 	context = {
 		"record":record,
 		"tag":"bill",
 		"label": "today",
-		"total":total
+		"total":total,
+		"base_no": start_no,
+		"pages_number": range(pages_number),
+		"page_no": page_no
 	}
 	return render(request,"admin_bill_today.html", context)
 
@@ -589,11 +746,28 @@ def admin_bill_yesterday(request):
 	if record:
 		for i in record:
 			total = total + i.total
+	pages_number = 0
+	start_no = 0
+	page_no = 0
+	if len(record) > 50:
+		pages_number = int(math.ceil(len(record)/50.0))
+		if "page" not in request.GET:
+			return HttpResponseRedirect("/accounting/administrator/bill/yesterday?page=0")
+	if "page" in request.GET:
+		page_no = int(request.GET['page'])
+		start_no = page_no * 50
+		if len(record) - start_no >= 50:
+			record = record[start_no:start_no + 50]
+		else:
+			record = record[start_no:]
 	context = {
 		"record":record,
 		"tag":"bill",
 		"label": "yesterday",
-		"total":total
+		"total":total,
+		"base_no": start_no,
+		"pages_number": range(pages_number),
+		"page_no": page_no
 	}
 	return render(request,"admin_bill_today.html", context)
 
@@ -614,11 +788,28 @@ def admin_bill_month(request):
 	if record:
 		for i in record:
 			total = total + i.total
+	pages_number = 0
+	start_no = 0
+	page_no = 0
+	if len(record) > 50:
+		pages_number = int(math.ceil(len(record)/50.0))
+		if "page" not in request.GET:
+			return HttpResponseRedirect("/accounting/administrator/bill/month?page=0")
+	if "page" in request.GET:
+		page_no = int(request.GET['page'])
+		start_no = page_no * 50
+		if len(record) - start_no >= 50:
+			record = record[start_no:start_no + 50]
+		else:
+			record = record[start_no:]
 	context = {
 		"record":record,
 		"tag":"bill",
 		"label": "month",
 		"total":total,
+		"pages_number": range(pages_number),
+		"base_no": start_no,
+		"page_no": page_no
 	}
 	return render(request,"admin_bill_today.html", context)
 
@@ -635,11 +826,28 @@ def admin_bill_year(request):
 	if record:
 		for i in record:
 			total = total + i.total
+	pages_number = 0
+	start_no = 0
+	page_no = 0
+	if len(record) > 50:
+		pages_number = int(math.ceil(len(record)/50.0))
+		if "page" not in request.GET:
+			return HttpResponseRedirect("/accounting/administrator/bill/year?page=0")
+	if "page" in request.GET:
+		page_no = int(request.GET['page'])
+		start_no = page_no * 50
+		if len(record) - start_no >= 50:
+			record = record[start_no:start_no + 50]
+		else:
+			record = record[start_no:]
 	context = {
 		"record":record,
 		"tag":"bill",
 		"label": "year",
-		"total":total
+		"total":total,
+		"base_no": start_no,
+		"pages_number": range(pages_number),
+		"page_no": page_no
 	}
 	return render(request,"admin_bill_today.html", context)
 
@@ -969,10 +1177,27 @@ def admin_VIP_topuprecord(request):
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
 	record = VIPTopupRecord.objects.all().order_by('-id')
+	pages_number = 0
+	start_no = 0
+	page_no = 0
+	if len(record) > 50:
+		pages_number = int(math.ceil(len(record)/50.0))
+		if "page" not in request.GET:
+			return HttpResponseRedirect("/accounting/administrator/VIP/topuprecord?page=0")
+	if "page" in request.GET:
+		page_no = int(request.GET['page'])
+		start_no = page_no * 50
+		if len(record) - start_no >= 50:
+			record = record[start_no:start_no + 50]
+		else:
+			record = record[start_no:]
 	context = {
 		"record":record,
 		"tag":"vip",
 		"label": "topup_record",
+		"base_no": start_no,
+		"pages_number": range(pages_number),
+		"page_no": page_no
 	}
 	return render(request, "admin_vip_topuprecord.html", context)
 
@@ -985,10 +1210,27 @@ def admin_VIP_paymentrecord(request):
 		return HttpResponseRedirect('/accounting/')
 	vip_paymethod = VIPPayment.objects.all().order_by('-id')[0]
 	record = Income.objects.filter(is_deleted=False,payment_method__id=vip_paymethod.payment.id,is_paid=True).order_by("-id")
+	pages_number = 0
+	start_no = 0
+	page_no = 0
+	if len(record) > 50:
+		pages_number = int(math.ceil(len(record)/50.0))
+		if "page" not in request.GET:
+			return HttpResponseRedirect("/accounting/administrator/VIP/paymentrecord?page=0")
+	if "page" in request.GET:
+		page_no = int(request.GET['page'])
+		start_no = page_no * 50
+		if len(record) - start_no >= 50:
+			record = record[start_no:start_no + 50]
+		else:
+			record = record[start_no:]
 	context = {
 		"record":record,
 		"tag":"vip",
 		"label": "payment_record",
+		"base_no": start_no,
+		"pages_number": range(pages_number),
+		"page_no": page_no
 	}
 	return render(request, "admin_vip_paymentrecord.html", context)
 

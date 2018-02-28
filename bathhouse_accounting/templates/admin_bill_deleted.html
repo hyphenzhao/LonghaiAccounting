@@ -11,6 +11,13 @@
 			<h3>总收入：{{total|floatformat}}</h3>
 			{% endif %}
 		</div>
+		<div class="col-12 text-center">
+			<div class="btn-group">
+				{% for i in pages_number %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/bill/deleted?page={{i}}">{{i|add:"1"}}</a>
+				{% endfor %}
+			</div>
+		</div>
 		<table class="table">
 			<thead>
 				<td>编号</td>
@@ -25,7 +32,7 @@
 			<tbody>
 				{% for i in records %}
 				<tr>
-					<td>{{forloop.counter}}</td>
+					<td>{{forloop.counter|add:base_no}}</td>
 					<td>{{i.income.date|date:"Y-m-d H:m"}}</td>
 					<td>{{i.income.total|floatformat}}</td>
 					<td>{{i.income.payment_method.name}}</td>
@@ -49,7 +56,13 @@
 				{% endfor %}
 			</tbody>
 		</table>
-		
+		<div class="col-12 text-center">
+			<div class="btn-group">
+				{% for i in pages_number %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/bill/deleted?page={{i}}">{{i|add:"1"}}</a>
+				{% endfor %}
+			</div>
+		</div>
 	</div>
 </div>
 {% endblock %}

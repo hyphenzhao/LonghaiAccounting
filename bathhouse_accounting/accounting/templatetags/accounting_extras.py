@@ -8,3 +8,7 @@ def return_item(l, i):
 		return l[i]
 	except:
 		return None
+		
+@register.filter
+def multiply(value, arg):
+    return value*arg

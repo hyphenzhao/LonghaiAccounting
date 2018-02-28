@@ -3,8 +3,15 @@
 {% block content %}
 <div class="container" style="background-color: white; padding: 20px;">
 	<div class="row" style="padding: 20px;">
-		<div class="col-6">
+		<div class="col-12">
 			<h3>会员充值管理</h3>
+		</div>
+		<div class="col-12 text-center">
+			<div class="btn-group">
+				{% for i in pages_number %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/VIP/topuprecord?page={{i}}">{{i|add:"1"}}</a>
+				{% endfor %}
+			</div>
 		</div>
 		<table class="table">
 			<thead>
@@ -18,7 +25,7 @@
 			<tbody>
 				{% for i in record %}
 				<tr>
-					<td>{{forloop.counter}}</td>
+					<td>{{forloop.counter|add:base_no}}</td>
 					<td>{{i.date|date:"Y-m-d H:m"}}</td>
 					<td>{{i.vip.card_no}}</td>
 					<td>{{i.vip.holder}}</td>
@@ -28,6 +35,13 @@
 				{% endfor %}
 			</tbody>
 		</table>
+		<div class="col-12 text-center">
+			<div class="btn-group">
+				{% for i in pages_number %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/VIP/topuprecord?page={{i}}">{{i|add:"1"}}</a>
+				{% endfor %}
+			</div>
+		</div>
 	</div>
 </div>
 {% endblock %}
