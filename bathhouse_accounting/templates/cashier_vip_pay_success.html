@@ -2,9 +2,6 @@
 {% load staticfiles %}
 {% block content %}
 <div style="background-color: white; padding: 20px;">
-	<div class="alert alert-danger"><h5>VIP支付失败！</h5></div>
-	<div class="alert alert-danger"><h5>{{error_message}}</h5></div>
-	{% if vip %}
 	<div class="card" style="width: 30rem;">
 		<div class="card-header text-center">
 			<h3>姓名：{{vip.holder}}</h3>
@@ -18,12 +15,11 @@
 			</div>
 			<div class="row">
 				<a class='btn btn-lg btn-primary' href="/accounting/cashier/VIP/topup?vip_no={{vip.id}}">充值</a>
+				<a href="/accounting/cashier/bill/" class="btn btn-lg btn-secondary">返回</a>
 			</div>
 		</div>
 		<div class="card-footer">
 		</div>
 	</div>
-	{% endif %}
-	<a href="/accounting/cashier/bill/edit?income_id={{income_id}}" class="btn btn-lg btn-secondary">返回</a>
 </div>
 {% endblock %}

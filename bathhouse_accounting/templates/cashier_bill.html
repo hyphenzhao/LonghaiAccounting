@@ -12,9 +12,9 @@
 				<div class="row">
 			{% for i in male_range %}
 				{% if male_record|return_item:i != 0 %}
-					<a class="btn btn-lg btn-primary" href="/accounting/cashier/bill/edit?income_id={{male_record|return_item:i}}">{% if i < 9 %}0{% endif %}{{i|add:'1'}}号<br>手牌</a>
+					<a style="margin: 5px;" class="btn btn-lg btn-primary" href="/accounting/cashier/bill/edit?income_id={{male_record|return_item:i}}">{% if i < 9 %}0{% endif %}{{i|add:'1'}}号<br>手牌</a>
 				{% else %}
-					<form action="/accounting/cashier/bill/create/" method="POST">
+					<form style="margin: 5px;" action="/accounting/cashier/bill/create/" method="POST">
 							{% csrf_token %}
 							<input type="hidden" name="card_no" value="{{i}}" />
 							<input type="hidden" name="item_no" value="{{0}}" />
@@ -35,13 +35,13 @@
 				<div class="row">
 			{% for i in female_range %}
 				{% if female_record|return_item:i != 0 %}
-					<a class="btn btn-lg btn-warning" href="/accounting/cashier/bill/edit?income_id={{female_record|return_item:i}}">{% if i < 9 %}0{% endif %}{{i|add:'1'}}号<br>手牌</a>
+					<a style="margin: 5px;" class="btn btn-lg btn-danger" href="/accounting/cashier/bill/edit?income_id={{female_record|return_item:i}}">{% if i < 9 %}0{% endif %}{{i|add:'1'}}号<br>手牌</a>
 				{% else %}
-					<form action="/accounting/cashier/bill/create/" method="POST">
+					<form style="margin: 5px;" action="/accounting/cashier/bill/create/" method="POST">
 							{% csrf_token %}
 							<input type="hidden" name="card_no" value="{{i}}" />
 							<input type="hidden" name="item_no" value="{{1}}" />
-							<button class="btn btn-lg btn-outline-warning">{% if i < 9 %}0{% endif %}{{i|add:'1'}}号<br>手牌</button>
+							<button class="btn btn-lg btn-outline-danger">{% if i < 9 %}0{% endif %}{{i|add:'1'}}号<br>手牌</button>
 					</form>
 				{% endif %}
 			{% endfor %}

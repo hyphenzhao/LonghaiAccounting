@@ -129,7 +129,7 @@ def waiter_order_service(request):
 	if income.is_paid or income.is_deleted:
 		return HttpResponseRedirect('/accounting/waiter/')
 	services = Service.objects.filter(income=income,is_deleted=False).order_by("-id")
-	items = Item.objects.filter(is_deleted=False)
+	items = Item.objects.filter(is_deleted=False).order_by("priority")
 	total = 0
 	if services.exists():
 		for i in services:
@@ -207,7 +207,7 @@ def cashier_vip_topup(request):
 		return HttpResponseRedirect('/accounting/')
 	vip_id = request.GET['vip_no']
 	vip = VIP.objects.get(pk=vip_id)
-	methods = PaymentMethod.objects.filter(is_deleted=False).order_by('id')
+	methods = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
 	if methods:
 		first_method = methods[0]
 	vip_method_exist = VIPPayment.objects.all()
@@ -267,7 +267,7 @@ def cashier_daily(request):
 	end = start + timedelta(days=1)
 	records = Income.objects.filter(date__range=(start, end),is_deleted=False,is_paid=True,recorder=system_user)
 	total_dict = {}
-	payment_methods = PaymentMethod.objects.filter(is_deleted=False)
+	payment_methods = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
 	final_total = 0
 	for i in payment_methods:
 		total = 0
@@ -342,7 +342,7 @@ def cashier_bill_create(request):
 			)
 		new_income.save()
 		return HttpResponseRedirect('/accounting/cashier/bill/')
-	items = Item.objects.filter(is_deleted=False)
+	items = Item.objects.filter(is_deleted=False).order_by("priority")
 	context = {
 		"tag":"bill",
 		"items":items,
@@ -361,9 +361,9 @@ def cashier_bill_edit(request):
 	if income.is_paid or income.is_deleted:
 		return HttpResponseRedirect('/accounting/cashier/bill/')
 	services = Service.objects.filter(income=income,is_deleted=False).order_by("-id")
-	items = Item.objects.filter(is_deleted=False)
+	items = Item.objects.filter(is_deleted=False).order_by("priority")
 	staffs = Staff.objects.filter(title__priviledge=100,is_deleted=False)
-	payment_methods = PaymentMethod.objects.filter(is_deleted=False).order_by("id")
+	payment_methods = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
 	current_method = VIPPayment.objects.all().order_by('-id')[0]
 	total = 0
 	previous_service = None
@@ -441,7 +441,7 @@ def cashier_bill_pay(request):
 	if income.is_paid or income.is_deleted:
 		return HttpResponseRedirect('/accounting/cashier/bill/')
 	services = Service.objects.filter(income=income,is_deleted=False)
-	payment_methods = PaymentMethod.objects.filter(is_deleted=False)
+	payment_methods = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
 	current_method = VIPPayment.objects.all().order_by('-id')[0]
 	total = 0
 	if services.exists():
@@ -475,7 +475,12 @@ def cashier_bill_pay(request):
 				income.is_paid = True
 				income.vip = vip
 				income.save()
-				return HttpResponseRedirect('/accounting/cashier/bill/')
+				context = {
+					"tag":"bill",
+					"vip": vip,
+					"income_id": income_id
+				}
+				return render(request, "cashier_vip_pay_success.html", context)
 			else:
 				vip = None
 				if auth_check:
@@ -525,7 +530,7 @@ def admin_bill_search(request):
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
 	servants = Staff.objects.filter(is_deleted=False, title__priviledge=100)
-	methods = PaymentMethod.objects.filter(is_deleted=False)
+	methods = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
 	incomes = Income.objects.all().order_by("date")
 	if incomes:
 		first_income = incomes[0]
@@ -567,8 +572,10 @@ def admin_bill_search(request):
 				services = Service.objects.filter(income__is_deleted=False, is_deleted=False, income__date__range=(start_date, end_date))
 			all_total = 0
 			labour_cost = 0
+			ranged_incomes = Income.objects.filter(is_deleted=False, date__range=(start_date, end_date))
+			for i in ranged_incomes:
+				all_total = all_total + i.total
 			for i in services:
-				all_total = all_total + i.item.price * i.item_no
 				labour_cost = labour_cost + i.item.price * i.item_no * i.item.promote_ratio
 			context = {
 				"tag": "bill",
@@ -1007,6 +1014,8 @@ def admin_payment_method(request):
 					real_income=is_real_value
 					)
 				new_payment.save()
+				new_payment.priority = new_payment.id
+				new_payment.save()
 		return HttpResponseRedirect('/accounting/administrator/payment-method/')
 	if request.method == "POST" and "delete_element" in request.POST:
 		payment_id = request.POST['payment_no']
@@ -1016,36 +1025,20 @@ def admin_payment_method(request):
 		return HttpResponseRedirect('/accounting/administrator/payment-method/')
 	if request.method == "POST" and "up_element" in request.POST:
 		item_id = request.POST['item_no']
-		items = PaymentMethod.objects.filter(is_deleted=False).order_by("id")
+		items = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
 		current_item = PaymentMethod.objects.get(pk=item_id)
 		pre_item = items[0]
 		for i in items:
 			if i.id == current_item.id:
-				vip_check = False
-				is_vip_payment = VIPPayment.objects.filter(payment=pre_item)
-				if is_vip_payment:
-					vip_payment = is_vip_payment.order_by("id")[0]
-					vip_payment.payment_id = current_item.id
-					vip_payment.save()
-					vip_check = True
-				is_vip_payment = VIPPayment.objects.filter(payment=current_item)
-				if not vip_check and is_vip_payment:
-					vip_payment = is_vip_payment.order_by("id")[0]
-					vip_payment.payment_id = pre_item.id
-					vip_payment.save()
-				pre_item_id = pre_item.id
-				pre_item.id = 1000000
-				pre_item.save()
-				current_item.id = pre_item_id
+				pre_item_priority = pre_item.priority
+				pre_item.priority = current_item.priority
+				current_item.priority = pre_item_priority
 				current_item.save()
-				pre_item.id = item_id
 				pre_item.save()
-				item = PaymentMethod.objects.get(pk=1000000)
-				item.delete()
 				return HttpResponseRedirect('/accounting/administrator/payment-method/#form_' + str(current_item.id))
 			else:
 				pre_item = i
-	record = PaymentMethod.objects.filter(is_deleted=False)
+	record = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
 	context = {
 		"record":record,
 		"tag":"payment",
@@ -1075,6 +1068,8 @@ def admin_service(request):
 					promote_ratio=new_service_ratio
 					)
 				new_service.save()
+				new_service.priority = new_service.id
+				new_service.save()
 		return HttpResponseRedirect('/accounting/administrator/service/')
 	if request.method == "POST" and "delete_element" in request.POST:
 		item_id = request.POST['item_no']
@@ -1084,24 +1079,20 @@ def admin_service(request):
 		return HttpResponseRedirect('/accounting/administrator/service/')
 	if request.method == "POST" and "up_element" in request.POST:
 		item_id = request.POST['item_no']
-		items = Item.objects.filter(is_deleted=False).order_by("id")
+		items = Item.objects.filter(is_deleted=False).order_by("priority")
 		current_item = Item.objects.get(pk=item_id)
 		pre_item = items[0]
 		for i in items:
 			if i.id == current_item.id:
-				pre_item_id = pre_item.id
-				pre_item.id = 1000000
-				pre_item.save()
-				current_item.id = pre_item_id
+				pre_item_priority = pre_item.priority
+				pre_item.priority = current_item.priority
+				current_item.priority = pre_item_priority
 				current_item.save()
-				pre_item.id = item_id
 				pre_item.save()
-				item = Item.objects.get(pk=1000000)
-				item.delete()
 				return HttpResponseRedirect('/accounting/administrator/service/#form_' + str(current_item.id))
 			else:
 				pre_item = i
-	record = Item.objects.filter(is_deleted=False)
+	record = Item.objects.filter(is_deleted=False).order_by("priority")
 	context = {
 		"record":record,
 		"tag":"service",
@@ -1155,7 +1146,7 @@ def admin_VIP(request):
 		new_vip_record.save()
 		return HttpResponseRedirect('/accounting/administrator/VIP/')
 	record = VIP.objects.filter(is_deleted=False).order_by('card_no')
-	methods = PaymentMethod.objects.filter(is_deleted=False)
+	methods = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
 	if VIPPayment.objects.all():
 		current_method = VIPPayment.objects.all().order_by('-id')[0]
 	else:

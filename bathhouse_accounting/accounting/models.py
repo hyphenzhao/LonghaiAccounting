@@ -39,12 +39,14 @@ class Item(models.Model):
 	cost = models.DecimalField(max_digits=25, decimal_places=15)
 	promote_ratio = models.DecimalField(max_digits=25, decimal_places=15, default=0.0)
 	is_deleted = models.BooleanField(default=False)
+	priority = models.IntegerField(default=0)
 
 class PaymentMethod(models.Model):
 	name = models.CharField(max_length=60)
 	real_income = models.BooleanField(default=True)
 	is_deleted = models.BooleanField(default=False)
-
+	priority = models.IntegerField(default=0)
+	
 class VIP(models.Model):
 	card_no = models.CharField(max_length=60)
 	holder = models.CharField(max_length=60, null=True)
@@ -78,7 +80,7 @@ class VIPTopupRecord(models.Model):
 			on_delete=models.CASCADE,
 			null=True
 		)
-	
+
 class Income(models.Model):
 	customer_name = models.CharField(max_length=60, null=True)
 	# false = male, true = female
