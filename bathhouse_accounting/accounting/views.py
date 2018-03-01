@@ -573,9 +573,8 @@ def admin_bill_search(request):
 			all_total = 0
 			labour_cost = 0
 			ranged_incomes = Income.objects.filter(is_deleted=False, date__range=(start_date, end_date))
-			for i in ranged_incomes:
-				all_total = all_total + i.total
 			for i in services:
+				all_total = all_total + i.item_no * i.item.price
 				labour_cost = labour_cost + i.item.price * i.item_no * i.item.promote_ratio
 			context = {
 				"tag": "bill",
