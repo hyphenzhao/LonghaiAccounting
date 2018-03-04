@@ -11,6 +11,7 @@
 				</div>
 				<div class="row">
 			{% for i in male_range %}
+			{% if i|mod:10 != 4 and i|div:10 != 4%}
 				{% if male_record|return_item:i != 0 %}
 					<a style="margin: 5px;" class="btn btn-lg btn-primary" href="/accounting/cashier/bill/edit?income_id={{male_record|return_item:i}}">{% if i < 9 %}0{% endif %}{{i|add:'1'}}号<br>手牌</a>
 				{% else %}
@@ -21,6 +22,7 @@
 							<button class="btn btn-lg btn-outline-primary">{% if i < 9 %}0{% endif %}{{i|add:'1'}}号<br>手牌</button>
 					</form>
 				{% endif %}
+			{% endif %}
 			{% endfor %}
 				</div>
 			</div>
@@ -34,6 +36,7 @@
 				</div>
 				<div class="row">
 			{% for i in female_range %}
+			{% if i|mod:10 != 4 and i|div:10 != 4%}
 				{% if female_record|return_item:i != 0 %}
 					<a style="margin: 5px;" class="btn btn-lg btn-danger" href="/accounting/cashier/bill/edit?income_id={{female_record|return_item:i}}">{% if i < 9 %}0{% endif %}{{i|add:'1'}}号<br>手牌</a>
 				{% else %}
@@ -44,6 +47,7 @@
 							<button class="btn btn-lg btn-outline-danger">{% if i < 9 %}0{% endif %}{{i|add:'1'}}号<br>手牌</button>
 					</form>
 				{% endif %}
+			{% endif %}
 			{% endfor %}
 				</div>
 			</div>

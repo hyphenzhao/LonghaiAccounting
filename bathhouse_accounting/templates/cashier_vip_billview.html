@@ -1,0 +1,51 @@
+{% extends "cashier_base.html" %}
+{% load staticfiles %}
+{% load accounting_extras %}
+{% block content %}
+<div class="container" style="background-color: white; padding: 20px;">
+	<div class="row" style="padding: 20px;">
+		<div class="col-12">
+			<h3>{{vip.holder}}消费记录   卡号：{{vip.card_no}}</h3>
+		</div>
+		<div class="col-12 text-center">
+			<div class="btn-group">
+				{% for i in pages_number %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/VIP/billview?page={{i}}">{{i|add:"1"}}</a>
+				{% endfor %}
+			</div>
+		</div>
+		<table class="table">
+			<thead>
+				<td>编号</td>
+				<td>时间</td>
+				<td>金额</td>
+				<td>详细消费记录</td>
+			</thead>
+			<tbody>
+				{% for i in records %}
+				<tr>
+					<td>{{forloop.counter|add:base_no}}</td>
+					<td>{{i.date|date:"Y-m-d H:m"}}</td>
+					<td>{{i.total|floatformat}}</td>
+					<td>
+						{% for j in services|return_item:i.id %}
+						{{j.item.name}}¥{{j.item.price|floatformat}}x{{j.item_no|floatformat}}......{% with item_total=j.item.price|multiply:j.item_no %}¥{{item_total|floatformat}}{% endwith %}<br>
+						{% endfor %}
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		<div class="col-12 text-center">
+			<div class="btn-group">
+				{% for i in pages_number %}
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/VIP/billview?page={{i}}">{{i|add:"1"}}</a>
+				{% endfor %}
+			</div>
+		</div>
+		<div class="col-12 text-center">
+			<a class="btn btn-secondary" href="/accounting/cashier/VIP/">返回</a>
+		</div>
+	</div>
+</div>
+{% endblock %}

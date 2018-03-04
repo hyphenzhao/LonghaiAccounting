@@ -3,10 +3,16 @@
 {% block content %}
 <div style="background-color: white; padding: 20px;">
 	<div class="card" style="width: 30rem;">
-		<div class="card-header text-center">
-			<h3>姓名：{{vip.holder}}</h3>
-		</div>
 		<div class="card-body">
+			<div class="row">
+				<p>会员号：{{vip.card_no}}</p>
+			</div>
+			<div class="row">
+				<p>姓名：{{vip.holder}}</p>
+			</div>
+			<div class="row">
+				<p>付款额：{{total|floatformat}}</p>
+			</div>
 			<div class="row">
 				<p>联系方式：{{vip.phone}}</p>
 			</div>
@@ -14,11 +20,12 @@
 				<p>余额：{{vip.balance|floatformat}}</p>
 			</div>
 			<div class="row">
-				<a class='btn btn-lg btn-primary' href="/accounting/cashier/VIP/topup?vip_no={{vip.id}}">充值</a>
+				<p>消费时间：{{time|date:"Y-m-d"}}</p>
+			</div>
+			<div class="row">
+				<button class="btn btn-primary" onclick="window.print()">打印</button>
 				<a href="/accounting/cashier/bill/" class="btn btn-lg btn-secondary">返回</a>
 			</div>
-		</div>
-		<div class="card-footer">
 		</div>
 	</div>
 </div>

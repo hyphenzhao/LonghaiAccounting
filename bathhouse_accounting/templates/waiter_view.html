@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load staticfiles %}
+{% load accounting_extras %}
 {% block content %}
 <div class="container" style="background-color: white; padding: 20px;">
 	<div class="row" style="padding: 20px;">
@@ -17,18 +18,33 @@
 				<td>服务名称</td>
 				<td>单价</td>
 				<td>数量</td>
+				<td>总价</td>
 			</thead>
 			<tbody>
 				{% for i in records %}
 				<tr>
 					<td>{{forloop.counter}}</td>
-					<td>{{i.income.card_no}}</td>
+					<td>{{i.income.card_no|add:"1"}}</td>
 					<td>{{i.income.date|date:"Y-m-d h:m"}}</td>
 					<td>{{i.item.name}}</td>
 					<td>{{i.item.price|floatformat}}</td>
 					<td>{{i.item_no|floatformat}}</td>
+					<td>
+						{% with item_total=i.item.price|multiply:i.item_no %}
+							{{item_total|floatformat}}
+						{% endwith %}
+					</td>
 				</tr>
 				{% endfor %}
+				<tr>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td>今日总金额：</td>
+					<td>{{total|floatformat}}</td>
+				</tr>
 			</tbody>
 		</table>
 	</div>

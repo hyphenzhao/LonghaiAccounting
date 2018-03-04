@@ -12,3 +12,13 @@ def return_item(l, i):
 @register.filter
 def multiply(value, arg):
     return value*arg
+
+@register.filter
+def mod(v, a):
+	v = v + 1
+	return v%a
+
+@register.filter
+def div(v, a):
+	v = v + 1
+	return int(v/a)

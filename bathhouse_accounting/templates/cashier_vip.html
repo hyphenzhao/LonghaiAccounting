@@ -10,7 +10,7 @@
 			<div class="form-inline">
 				<label for="vip_no">输入卡号或在此刷卡：</label>
 				<input type="input" class="form-control" id="vip_no" />
-				<button class="btn btn-primary" onclick="search_vip()">查询</button>
+				<button class="btn btn-lg btn-primary" onclick="search_vip()">查询</button>
 			</div>
 		</div>
 		<table class="table">
@@ -31,7 +31,8 @@
 					<td>{{i.phone}}</td>
 					<td>{{i.balance|floatformat}}</td>
 					<td>
-						<a class='btn btn-primary' href="/accounting/cashier/VIP/topup?vip_no={{i.id}}">充值</a>
+						<a class='btn btn-lg btn-info' href="/accounting/cashier/VIP/billview?vip_no={{i.id}}">消费记录</a>
+						<a class='btn btn-lg btn-primary' href="/accounting/cashier/VIP/topup?vip_no={{i.id}}">充值</a>
 					</td>
 				</tr>
 				{% endfor %}

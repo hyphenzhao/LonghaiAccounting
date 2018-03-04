@@ -91,8 +91,12 @@ def waiter_view(request):
 	end = start + timedelta(days=1)
 	staff = Staff.objects.get(pk=request.session['worker_id'])
 	records = Service.objects.filter(is_deleted=False, income__date__range=(start,end),staff=staff)
+	total = 0
+	for i in records:
+		total = total + i.item.price * i.item_no
 	context = {
 		"records": records,
+		"total": total,
 	}
 	return render(request, "waiter_view.html", context)
 
@@ -256,6 +260,45 @@ def cashier_vip_view(request):
 	}
 	return render(request, "cashier_vip_view.html", context)
 
+def cashier_vip_billview(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'cashier' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	vip_no = request.GET['vip_no']
+	vip = VIP.objects.get(pk=vip_no)
+	record = Income.objects.filter(is_deleted=False, vip=vip)
+	services = {}
+	for i in record:
+		tmp_services = Service.objects.filter(is_deleted=False, income=i)
+		services[i.id] = tmp_services
+	pages_number = 0
+	start_no = 0
+	page_no = 0
+	if len(record) > 50:
+		pages_number = int(math.ceil(len(record)/50.0))
+		if "page" not in request.GET:
+			return HttpResponseRedirect("/accounting/administrator/VIP/paymentrecord?page=0")
+	if "page" in request.GET:
+		page_no = int(request.GET['page'])
+		start_no = page_no * 50
+		if len(record) - start_no >= 50:
+			record = record[start_no:start_no + 50]
+		else:
+			record = record[start_no:]
+	context = {
+		"vip":vip,
+		"tag":"vip",
+		"base_no": start_no,
+		"pages_number": range(pages_number),
+		"page_no": page_no,
+		"records": record,
+		"services": services
+	}
+	return render(request, "cashier_vip_billview.html", context)
+
 def cashier_daily(request):
 	if 'user_id' not in request.session:
 		return HttpResponseRedirect('/accounting/')
@@ -304,8 +347,8 @@ def cashier_bill(request):
 			i.save()
 		return HttpResponseRedirect('/accounting/cashier/bill/')
 	record = Income.objects.filter(is_deleted=False,is_paid=False)
-	female_record = [0 for i in range(49)]
-	male_record = [0 for i in range(61)]
+	female_record = [0 for i in range(64)]
+	male_record = [0 for i in range(78)]
 	for i in record:
 		if i.gender:
 			female_record[int(i.card_no)] = i.id
@@ -314,8 +357,8 @@ def cashier_bill(request):
 	context = {
 		"record":record,
 		"tag":"bill",
-		"female_range":range(48),
-		"male_range":range(60),
+		"female_range":range(63),
+		"male_range":range(77),
 		"male_record": male_record,
 		"female_record": female_record
 	}
@@ -478,7 +521,9 @@ def cashier_bill_pay(request):
 				context = {
 					"tag":"bill",
 					"vip": vip,
-					"income_id": income_id
+					"income_id": income_id,
+					"total": income.total,
+					"time": income.date
 				}
 				return render(request, "cashier_vip_pay_success.html", context)
 			else:
@@ -1158,7 +1203,40 @@ def admin_VIP(request):
 		"label": "index",
 	}
 	return render(request,"admin_vip.html", context)
-
+def admin_VIP_viewbill(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	vip_no = request.GET['no']
+	vip = VIP.objects.get(pk=vip_no)
+	record = Income.objects.filter(is_deleted=False, vip=vip)
+	pages_number = 0
+	start_no = 0
+	page_no = 0
+	if len(record) > 50:
+		pages_number = int(math.ceil(len(record)/50.0))
+		if "page" not in request.GET:
+			return HttpResponseRedirect("/accounting/administrator/VIP/paymentrecord?page=0")
+	if "page" in request.GET:
+		page_no = int(request.GET['page'])
+		start_no = page_no * 50
+		if len(record) - start_no >= 50:
+			record = record[start_no:start_no + 50]
+		else:
+			record = record[start_no:]
+	context = {
+		"records": record,
+		"tag": "vip",
+		"label": "payment_record",
+		"vip":vip,
+		"base_no": start_no,
+		"pages_number": range(pages_number),
+		"page_no": page_no
+	}
+	return render(request, "admin_vip_viewbill.html", context)
 def admin_VIP_topuprecord(request):
 	if 'user_id' not in request.session:
 		return HttpResponseRedirect('/accounting/')
