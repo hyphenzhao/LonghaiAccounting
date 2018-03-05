@@ -6,7 +6,7 @@
 	<div class="row">
 		<div class="row">
 			<div class="col-6">
-				<h5>消费时间：{{record.date|date:"Y-m-d h:m"}} {% if vip_paid %}VIP：{{record.vip.holder}} {% endif %} </h5>
+				<h5>开台时间：{{record.date|date:"Y-m-d h:m"}} <br>支付时间：{{record.paid_date|date:"Y-m-d h:m"}}<br>{% if vip_paid %}VIP：{{record.vip.holder}} {% endif %} </h5>
 			</div>
 			<div class="col-6 text-center">
 				{% if error_message %}
@@ -16,7 +16,7 @@
 				{% endif %}
 			</div>
 			<div class="col-12">
-				<h5>前台：{{record.recorder.user.first_name}} 顾客手牌号：{{record.card_no|add:"1"}}</h5>
+				<h5>前台：{{record.recorder.user.first_name}}<br>顾客手牌号：{{record.card_no|add:"1"}}</h5>
 			</div>
 		</div>
 		<table class="table table-condensed table-bordered table-striped">

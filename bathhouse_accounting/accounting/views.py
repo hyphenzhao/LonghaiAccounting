@@ -517,6 +517,7 @@ def cashier_bill_pay(request):
 				income.payment_method = payment_method
 				income.is_paid = True
 				income.vip = vip
+				income.paid_date = now()
 				income.save()
 				context = {
 					"tag":"bill",
@@ -546,6 +547,7 @@ def cashier_bill_pay(request):
 			income.total = total
 			income.payment_method = payment_method
 			income.is_paid = True
+			income.paid_date = now()
 			income.save()
 			return HttpResponseRedirect('/accounting/cashier/bill/')
 	context = {

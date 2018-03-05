@@ -52,7 +52,7 @@
 							{{forloop.counter}}
 						{% endif %}
 					</td>
-					<td>{{i.date|date:"Y-m-d H:m"}}</td>
+					<td>开台：{{i.date|date:"Y-m-d H:m"}}<br>结账：{{i.paid_date|date:"Y-m-d H:m"}}</td>
 					<td>{{i.total|floatformat}}</td>
 					<td>{{i.payment_method.name}}</td>
 					<td>{{i.recorder.user.first_name}}</td>

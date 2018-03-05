@@ -87,6 +87,7 @@ class Income(models.Model):
 	gender = models.BooleanField(default=False)
 	total = models.DecimalField(max_digits=25, decimal_places=15, default=0.0)
 	date = models.DateTimeField(auto_now_add=True, blank=True)
+	paid_date = models.DateTimeField(null=True, blank=True)
 	card_no = models.CharField(max_length=60)
 	recorder = models.ForeignKey(
 			SystemUser,
