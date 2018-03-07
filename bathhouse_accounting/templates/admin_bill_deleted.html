@@ -33,7 +33,7 @@
 				{% for i in records %}
 				<tr>
 					<td>{{forloop.counter|add:base_no}}</td>
-					<td>{{i.income.date|date:"Y-m-d H:m"}}</td>
+					<td>{{i.income.date|date:"Y-m-d H:i"}}</td>
 					<td>{{i.income.total|floatformat}}</td>
 					<td>{{i.income.payment_method.name}}</td>
 					<td>

@@ -33,7 +33,7 @@
 					<td>{{forloop.counter}}</td>
 					<td>{{i.income.card_no|add:"1"}}</td>
 					<td>{{i.item.name}}</td>
-					<td>{{i.income.date|date:"Y-m-d H:m"}}</td>
+					<td>{{i.income.date|date:"Y-m-d H:i"}}</td>
 					<td>
 						{% with total=i.item.price|multiply:i.item_no %}
 							{{total|floatformat}}

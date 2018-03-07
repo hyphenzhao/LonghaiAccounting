@@ -26,7 +26,7 @@
 				{% for i in records %}
 				<tr>
 					<td>{{forloop.counter|add:base_no}}</td>
-					<td>开台：{{i.date|date:"Y-m-d H:m"}}<br>结账：{{i.paid_date|date:"Y-m-d H:m"}}</td>
+					<td>开台：{{i.date|date:"Y-m-d H:i"}}<br>结账：{{i.paid_date|date:"Y-m-d H:i"}}</td>
 					<td>{{i.total|floatformat}}</td>
 					<td>{{i.vip.card_no}}</td>
 					<td>{{i.recorder.user.first_name}}</td>

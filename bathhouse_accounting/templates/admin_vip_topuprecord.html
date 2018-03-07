@@ -26,7 +26,7 @@
 				{% for i in record %}
 				<tr>
 					<td>{{forloop.counter|add:base_no}}</td>
-					<td>{{i.date|date:"Y-m-d H:m"}}</td>
+					<td>{{i.date|date:"Y-m-d H:i"}}</td>
 					<td>{{i.vip.card_no}}</td>
 					<td>{{i.vip.holder}}</td>
 					<td>{{i.recorder.user.first_name}}</td>
