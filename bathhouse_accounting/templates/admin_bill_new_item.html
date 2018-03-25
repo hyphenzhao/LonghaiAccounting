@@ -1,7 +1,12 @@
 {% extends "admin_bill_base.html" %}
 {% load staticfiles %}
 {% block content %}
-
+<script type="text/javascript">
+	var options_innerHTML = {% for i in items%}"<option value='{{i.id}}'>{{i.name}}</option>" + {% endfor %} "";
+	var staff_options_innerHTML = "<option value='0'>无</option>" + {% for i in staffs%}"<option value='{{i.id}}'>{{i.name}}</option>" + {% endfor %} "";
+	var prices = new Map([{% for i in items%}[{{i.id}},{{i.price|floatformat}}],{% endfor %}]);
+</script>
+<script src="{%static 'js/cashier.js'%}"></script>
 <div style="background-color: white; padding: 20px;">
 	<div class="row">
 		<div class="row">
@@ -18,9 +23,6 @@
 			<div class="col-6">
 				<h5>前台：{{record.recorder.user.first_name}}<br>顾客手牌号：{{record.card_no|add:"1"}}</h5>
 			</div>
-			<div class="col-6">
-				<a class="btn btn-success" href="/accounting/administrator/bill/newitem?income_id={{record.id}}">+新增项目</a>
-			</div>
 		</div>
 		<table class="table table-condensed table-bordered table-striped">
 			<thead>
@@ -30,7 +32,6 @@
 				<td>技师</td>
 				<td>记录员</td>
 				<td>备注</td>
-				<td>操作</td>
 			</thead>
 			<tbody>
 				{% for i in services %}
@@ -47,21 +48,9 @@
 						<div class="alert alert-success text-center" role="alert">已付款</div>
 						{% endif %}
 					</td>
-					<td>
-						{%if not i.is_deleted%}
-						<form id="form_{{i.id}}"style="width: 100%;" action="/accounting/administrator/bill/view?income_id={{record.id}}" method="POST">
-						{% csrf_token %} 
-							<a class="btn btn-warning" href="/accounting/administrator/bill/edititem?service_id={{i.id}}">修改</a>
-							<input type="hidden" id="service_id" name="service_id" value="{{i.id}}" />
-							<input type="hidden" name="delete_element" value="delete_element" />
-							<button class='btn btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{i.id}}')">删除</button>
-						</form>
-						{%endif%}
-					</td>
 				</tr>
 				{% endfor %}
 				<tr>
-					<td></td>
 					<td></td>
 					<td></td>
 					<td></td>
@@ -72,6 +61,35 @@
 			</tbody>
 		</table>
 	</div>
+	<div class="container">
+			<div class="row">
+				<div class="col-6">
+					<h3>添加服务</h3>
+				</div>
+				<div class="col-6 text-right">
+					<button class="btn btn-primary" onclick="add_new_service()">+添加</button>
+				</div>
+			</div>
+			<form action="/accounting/administrator/bill/newitem?income_id={{record.id}}" method="POST">
+				{% csrf_token %}
+				<table class="table table-condensed table-bordered table-striped">
+					<thead>
+						<td>编号</td>
+						<td>服务项目名称</td>
+						<td>单价</td>
+						<td>数量</td>
+						<td>负责人</td>
+						<td>操作</td>
+					</thead>
+					<tbody id="ready-add-table">
+					</tbody>
+				</table>
+				<input type="hidden" id="index_number" name="index_number" value="1" />
+				<div class="col-12 text-center">
+					<button class='btn btn-success' name="add_element">确认添加</button>
+					<a href="/accounting/cashier/bill/" class="btn btn-secondary">返回</a>
+				</div>
+			</form>
+		</div>
 </div>
-<button class="btn btn-secondary" onclick="goBack()">返回</button>
 {% endblock %}

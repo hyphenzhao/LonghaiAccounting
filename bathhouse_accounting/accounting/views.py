@@ -680,7 +680,7 @@ def admin_bill_droped(request):
 	context = {
 		"record":record,
 		"tag":"bill",
-		"label": "drop",
+		"label": "droped",
 		"base_no": start_no,
 		"pages_number": range(pages_number),
 		"page_no": page_no
@@ -694,7 +694,7 @@ def admin_bill_deleted(request):
 	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
-	records = Service.objects.filter(is_deleted=True).order_by('-id')
+	records = Service.objects.filter(is_deleted=True, income__is_paid=True).order_by('-id')
 	pages_number = 0
 	start_no = 0
 	page_no = 0
@@ -712,12 +712,93 @@ def admin_bill_deleted(request):
 	context = {
 		"records":records,
 		"tag":"bill",
-		"label": "delete",
+		"label": "deleted",
 		"page_no": page_no,
 		"pages_number": range(pages_number),
 		"base_no": start_no,
 	}
 	return render(request, "admin_bill_deleted.html", context)
+
+def admin_new_item(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	income_id = request.GET['income_id']
+	record = Income.objects.get(pk=income_id)
+	services = Service.objects.filter(income=record)
+	items = Item.objects.filter(is_deleted=False)
+	staffs = Staff.objects.filter(is_deleted=False,title__priviledge=100)
+	if request.method == "POST":
+		index_number = request.POST['index_number']
+		for i in range(1, int(index_number)):
+			service_selection_name = "service_selection_" + str(i)
+			if service_selection_name in request.POST:
+				service_selection_id = request.POST[service_selection_name]
+				item = Item.objects.get(pk=service_selection_id)
+				item_no = Decimal(request.POST['number_' + str(i)])
+				staff_selection = request.POST['staff_selection_' + str(i)]
+				if staff_selection != '0':
+					staff = Staff.objects.get(pk=staff_selection)
+				else:
+					staff = None
+				new_service = Service(
+						income=record,
+						item=item,
+						staff=staff,
+						recorder=system_user,
+						item_no=item_no,
+						is_deleted=False
+					)
+				new_service.save()
+				record.total = record.total + new_service.item.price * new_service.item_no
+				record.save()
+		return HttpResponseRedirect("/accounting/administrator/bill/view?income_id=" + str(record.id))
+	context = {
+		"tag":"bill",
+		"label": "view_detail",
+		"record": record,
+		"services":services,
+		"items": items,
+		"staffs":staffs,
+	}
+	return render(request, "admin_bill_new_item.html", context)
+
+def admin_edit_item(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	service_id = request.GET['service_id']
+	service = Service.objects.get(pk=service_id)
+	if service.is_deleted:
+		return HttpResponseRedirect("/accounting/administrator/bill/view?income_id=" + str(record.id))
+	record = Income.objects.get(pk=service.income.id)
+	services = Service.objects.filter(income=record)
+	if request.method == "POST":
+		item_no = Decimal(request.POST['item_no'])
+		record.total = record.total - service.item.price * service.item_no
+		service.item_no = item_no
+		if service.item_no == 0:
+			service.is_deleted = True
+			service.deleter = system_user
+		else:
+			record.total = record.total + service.item.price * service.item_no
+		service.save()
+		record.save()
+		return HttpResponseRedirect("/accounting/administrator/bill/view?income_id=" + str(record.id))
+	context = {
+		"tag":"bill",
+		"label": "view_detail",
+		"record": record,
+		"service_record": service,
+		"services":services,
+	}
+	return render(request, "admin_bill_edit_item.html", context)
 
 def admin_bill_view(request):
 	if 'user_id' not in request.session:
@@ -728,6 +809,17 @@ def admin_bill_view(request):
 		return HttpResponseRedirect('/accounting/')
 	income_id = request.GET['income_id']
 	record = Income.objects.get(pk=income_id)
+	if request.method == "POST" and "delete_element" in request.POST:
+		service_id = request.POST['service_id']
+		service = Service.objects.get(pk=service_id)
+		if service.is_deleted:
+			return HttpResponseRedirect("/accounting/administrator/bill/view?income_id=" + str(record.id))
+		record.total = record.total - service.item.price * service.item_no
+		service.is_deleted = True
+		service.deleter = system_user
+		record.save()
+		service.save()
+		return HttpResponseRedirect("/accounting/administrator/bill/view?income_id=" + str(record.id))
 	vip_pay = VIPPayment.objects.all().order_by('id')[0]
 	vip_paid = False
 	if record.payment_method == vip_pay.payment:
@@ -1232,7 +1324,7 @@ def admin_VIP_viewbill(request):
 	context = {
 		"records": record,
 		"tag": "vip",
-		"label": "payment_record",
+		"label": "paymentrecord",
 		"vip":vip,
 		"base_no": start_no,
 		"pages_number": range(pages_number),
@@ -1264,7 +1356,7 @@ def admin_VIP_topuprecord(request):
 	context = {
 		"record":record,
 		"tag":"vip",
-		"label": "topup_record",
+		"label": "topuprecord",
 		"base_no": start_no,
 		"pages_number": range(pages_number),
 		"page_no": page_no
@@ -1297,7 +1389,7 @@ def admin_VIP_paymentrecord(request):
 	context = {
 		"record":record,
 		"tag":"vip",
-		"label": "payment_record",
+		"label": "paymentrecord",
 		"base_no": start_no,
 		"pages_number": range(pages_number),
 		"page_no": page_no

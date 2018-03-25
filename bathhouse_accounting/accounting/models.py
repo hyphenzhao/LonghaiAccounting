@@ -124,7 +124,14 @@ class Service(models.Model):
 	recorder = models.ForeignKey(
 			SystemUser,
 			on_delete=models.CASCADE,
-			null=True
+			null=True,
+			related_name='recorder'
+		)
+	deleter = models.ForeignKey(
+			SystemUser,
+			on_delete=models.CASCADE,
+			null=True,
+			related_name='deleter'
 		)
 	item_no = models.DecimalField(max_digits=25, decimal_places=15, default=1.0)
 	is_deleted = models.BooleanField(default=False)

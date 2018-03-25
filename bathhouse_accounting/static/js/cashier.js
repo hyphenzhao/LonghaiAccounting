@@ -91,7 +91,7 @@ function add_new_service() {
 							"<td><select class='custom-select' id=\"staff_selection_" + index + "\" name='staff_selection_"+index+"'>"+
 								staff_options_innerHTML +
 							"</select></td>" +
-							"<td><button class='btn btn-danger' onclick=\"delete_element_by_id(\'new_service" + index + "\')\">删除</button></td>";
+							"<td><button class='btn btn-danger' type='button' onclick=\"delete_element_by_id(\'new_service_" + index + "\')\">删除</button></td>";
 	new_row.innerHTML = new_row_innerHTML;
 	ready_add_table.appendChild(new_row);
 	item = document.getElementById("service_selection_" + index);

@@ -6,11 +6,62 @@
 		<div class="col-12">
 			<h3>会员充值管理</h3>
 		</div>
-		<div class="col-12 text-center">
+				<div class="col-3 text-center">
+			{% if pages_number|length > 0 %}
+			<div class="btn-group" role="group">
+				<label for="btnGroupDrop1"><h5>页码：</h5></label>
+    			<button id="btnGroupDrop1" type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      				第{{page_no|add:1}}页
+    			</button>
+    			<div class="dropdown-menu" aria-labelledby="btnGroupDrop1" x-placement="bottom-start" style="position: absolute; transform: translate3d(0px, 38px, 0px); top: 0px; left: 0px; will-change: transform;">
+    				{% for i in pages_number %}
+      					<a class="dropdown-item" href="/accounting/administrator/VIP/{{label}}?page={{i}}">{{i|add:"1"}}</a>
+      				{% endfor %}
+    			</div>
+  			</div>
+  			{% endif %}
+		</div>
+		<div class="col-6 text-center">
 			<div class="btn-group">
-				{% for i in pages_number %}
-					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/VIP/topuprecord?page={{i}}">{{i|add:"1"}}</a>
-				{% endfor %}
+				{% if pages_number|last < 5 or pages_number|length_is:0 %}
+					{% for i in pages_number %}
+						<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/VIP/{{label}}?page={{i}}">{{i|add:"1"}}</a>
+					{% endfor %}
+				{% else %}
+					{% with upbound=pages_number|last %}
+					{% if page_no < 3 %}
+						{% if page_no != 0 %}
+							<a class="btn btn-outline-primary" href="/accounting/administrator/VIP/{{label}}?page={{i|add:'-1'}}">上一页</a>
+						{% endif %}
+						{% for i in "12345" %}
+							<a class="btn btn-outline-primary {%if page_no == forloop.counter0 %}active{% endif %}" href="/accounting/administrator/VIP/{{label}}?page={{i|add:'-1'}}">{{i}}</a>
+						{% endfor %}
+						<a class="btn btn-outline-primary" href="#">...</a>
+						<a class="btn btn-outline-primary" href="/accounting/administrator/VIP/{{label}}?page={{i|add:'1'}}">下一页</a>
+					{% elif page_no < upbound|add:-2 %}
+						<a class="btn btn-outline-primary" href="/accounting/administrator/VIP/{{label}}?page={{page_no|add:'-1'}}">上一页</a>
+						<a class="btn btn-outline-primary" href="#">...</a>
+						{% with reindex=page_no|add:"-2" %}
+							{% for i in "12345" %}
+								<a class="btn btn-outline-primary {%if i == '3' %}active{% endif %}" href="/accounting/administrator/VIP/{{label}}?page={{reindex|add:forloop.counter0}}">{{reindex|add:i}}</a>
+							{% endfor %}
+						{% endwith %}
+						<a class="btn btn-outline-primary" href="#">...</a>
+						<a class="btn btn-outline-primary" href="/accounting/administrator/VIP/{{label}}?page={{page_no|add:'1'}}">下一页</a>
+					{% else %}
+						<a class="btn btn-outline-primary" href="/accounting/administrator/VIP/{{label}}?page={{page_no|add:'-1'}}">上一页</a>
+						<a class="btn btn-outline-primary" href="#">...</a>
+						{% with reindex=upbound|add:"-4" %}
+							{% for i in "12345" %}
+								<a class="btn btn-outline-primary {%if  page_no == reindex|add:forloop.counter0 %}active{% endif %}" href="/accounting/administrator/VIP/{{label}}?page={{reindex|add:forloop.counter0}}">{{reindex|add:i}}</a>
+							{% endfor %}
+						{% endwith %}
+						{% if page_no != upbound %}
+							<a class="btn btn-outline-primary" href="/accounting/administrator/VIP/{{label}}?page={{page_no|add:'1'}}">下一页</a>
+						{% endif %}
+					{% endif %}
+					{% endwith %}
+				{% endif %}
 			</div>
 		</div>
 		<table class="table">
@@ -35,11 +86,62 @@
 				{% endfor %}
 			</tbody>
 		</table>
-		<div class="col-12 text-center">
+				<div class="col-3 text-center">
+			{% if pages_number|length > 0 %}
+			<div class="btn-group" role="group">
+				<label for="btnGroupDrop1"><h5>页码：</h5></label>
+    			<button id="btnGroupDrop1" type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      				第{{page_no|add:1}}页
+    			</button>
+    			<div class="dropdown-menu" aria-labelledby="btnGroupDrop1" x-placement="bottom-start" style="position: absolute; transform: translate3d(0px, 38px, 0px); top: 0px; left: 0px; will-change: transform;">
+    				{% for i in pages_number %}
+      					<a class="dropdown-item" href="/accounting/administrator/VIP/{{label}}?page={{i}}">{{i|add:"1"}}</a>
+      				{% endfor %}
+    			</div>
+  			</div>
+  			{% endif %}
+		</div>
+		<div class="col-6 text-center">
 			<div class="btn-group">
-				{% for i in pages_number %}
-					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/VIP/topuprecord?page={{i}}">{{i|add:"1"}}</a>
-				{% endfor %}
+				{% if pages_number|last < 5 or pages_number|length_is:0 %}
+					{% for i in pages_number %}
+						<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/VIP/{{label}}?page={{i}}">{{i|add:"1"}}</a>
+					{% endfor %}
+				{% else %}
+					{% with upbound=pages_number|last %}
+					{% if page_no < 3 %}
+						{% if page_no != 0 %}
+							<a class="btn btn-outline-primary" href="/accounting/administrator/VIP/{{label}}?page={{i|add:'-1'}}">上一页</a>
+						{% endif %}
+						{% for i in "12345" %}
+							<a class="btn btn-outline-primary {%if page_no == forloop.counter0 %}active{% endif %}" href="/accounting/administrator/VIP/{{label}}?page={{i|add:'-1'}}">{{i}}</a>
+						{% endfor %}
+						<a class="btn btn-outline-primary" href="#">...</a>
+						<a class="btn btn-outline-primary" href="/accounting/administrator/VIP/{{label}}?page={{i|add:'1'}}">下一页</a>
+					{% elif page_no < upbound|add:-2 %}
+						<a class="btn btn-outline-primary" href="/accounting/administrator/VIP/{{label}}?page={{page_no|add:'-1'}}">上一页</a>
+						<a class="btn btn-outline-primary" href="#">...</a>
+						{% with reindex=page_no|add:"-2" %}
+							{% for i in "12345" %}
+								<a class="btn btn-outline-primary {%if i == '3' %}active{% endif %}" href="/accounting/administrator/VIP/{{label}}?page={{reindex|add:forloop.counter0}}">{{reindex|add:i}}</a>
+							{% endfor %}
+						{% endwith %}
+						<a class="btn btn-outline-primary" href="#">...</a>
+						<a class="btn btn-outline-primary" href="/accounting/administrator/VIP/{{label}}?page={{page_no|add:'1'}}">下一页</a>
+					{% else %}
+						<a class="btn btn-outline-primary" href="/accounting/administrator/VIP/{{label}}?page={{page_no|add:'-1'}}">上一页</a>
+						<a class="btn btn-outline-primary" href="#">...</a>
+						{% with reindex=upbound|add:"-4" %}
+							{% for i in "12345" %}
+								<a class="btn btn-outline-primary {%if  page_no == reindex|add:forloop.counter0 %}active{% endif %}" href="/accounting/administrator/VIP/{{label}}?page={{reindex|add:forloop.counter0}}">{{reindex|add:i}}</a>
+							{% endfor %}
+						{% endwith %}
+						{% if page_no != upbound %}
+							<a class="btn btn-outline-primary" href="/accounting/administrator/VIP/{{label}}?page={{page_no|add:'1'}}">下一页</a>
+						{% endif %}
+					{% endif %}
+					{% endwith %}
+				{% endif %}
 			</div>
 		</div>
 	</div>
