@@ -14,7 +14,9 @@
 				{% csrf_token %}
 				<input type="hidden" name="income_id" value="{{income.id}}" />
 				<input type="hidden" name="delete_element"/>
+				{% if deleteable %}
 				<button class='btn btn-lg btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{income.id}}')">销卡</button>
+				{% endif %}
 			</form>
 		</div>
 	</div>

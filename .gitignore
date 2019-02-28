@@ -1,1 +1,4 @@
 *.pyc
+bathhouse_accounting/accounting/migrations/*.pyc
+bathhouse_accounting/accounting/*.pyc
+bathhouse_accounting/bathhouse_accounting/*.pyc

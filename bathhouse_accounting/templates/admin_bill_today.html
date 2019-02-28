@@ -89,17 +89,42 @@
 							{{forloop.counter}}
 						{% endif %}
 					</td>
-					<td>开台：{{i.date|date:"Y-m-d H:i"}}<br>结账：{{i.paid_date|date:"Y-m-d H:i"}}</td>
-					<td>{{i.total|floatformat}}</td>
-					<td>{{i.payment_method.name}}</td>
+					<td>开台：{{i.date|date:"Y-m-d H:i"}}<br>结账：{{i.paid_date|date:"Y-m-d H:i"}}
+						{% if not i.is_paid %}
+						未支付
+						{% endif %}
+					</td>
+					<td>
+						{% if not i.is_paid %}
+						未支付
+						{% else %}
+						{{i.total|floatformat}}
+						{% endif %}
+					</td>
+					<td>
+						{{i.payment_method.name}}
+						{% if not i.is_paid %}
+						未支付
+						{% endif %}
+					</td>
 					<td>{{i.recorder.user.first_name}}</td>
 					<td><a href="/accounting/administrator/bill/view?income_id={{i.id}}" class="btn btn-primary">查看详细</a>
+					{% if not i.is_paid and not i.is_deleted %}
+						<form action="/accounting/administrator/bill/" id="form_{{i.id}}" method="POST">
+							{% csrf_token %}
+							<input type="hidden" name="income_id" value="{{i.id}}" />
+							<input type="hidden" name="delete_element"/>
+							<button class='btn btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{i.id}}')">销台</button>
+						</form>
+					{% endif %}
 					</td>
 					<td>
 						{% if i.is_deleted %}
 						<div class="alert alert-danger" role="alert">已销台</div>
-						{% else %}
+						{% elif i.is_paid %}
 						<div class="alert alert-success" role="alert">已付款</div>
+						{% else %}
+						<div class="alert alert-primary" role="alert">尚未付款</div>
 						{% endif %}
 					</td>
 				</tr>

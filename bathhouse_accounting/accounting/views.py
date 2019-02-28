@@ -339,6 +339,9 @@ def cashier_bill(request):
 	if request.method == "POST" and "delete_element" in request.POST:
 		income_id = request.POST['income_id']
 		income = Income.objects.get(pk=income_id)
+		past_time = now() - income.date
+		if past_time.total_seconds() > 1800:
+			return HttpResponseRedirect('/accounting/cashier/bill/')
 		income.is_deleted = True
 		income.save()
 		related_services = Service.objects.filter(is_deleted=False, income=income)
@@ -401,6 +404,10 @@ def cashier_bill_edit(request):
 		return HttpResponseRedirect('/accounting/')
 	income_id = request.GET['income_id']
 	income = Income.objects.get(pk=income_id)
+	past_time = now() - income.date
+	income_deleteable = True
+	if past_time.total_seconds() > 1800:
+		income_deleteable = False
 	if income.is_paid or income.is_deleted:
 		return HttpResponseRedirect('/accounting/cashier/bill/')
 	services = Service.objects.filter(income=income,is_deleted=False).order_by("-id")
@@ -468,7 +475,8 @@ def cashier_bill_edit(request):
 		"methods": payment_methods,
 		"current_method": current_method,
 		"first_method": first_method,
-		"previous_service": previous_service
+		"previous_service": previous_service,
+		"deleteable": income_deleteable
 	}
 	return render(request, "cashier_bill_edit.html", context)
 
@@ -567,6 +575,15 @@ def admin_bill_index(request):
 	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
+	if request.method == "POST" and "delete_element" in request.POST:
+		income_id = request.POST['income_id']
+		income = Income.objects.get(pk=income_id)
+		income.is_deleted = True
+		income.save()
+		related_services = Service.objects.filter(is_deleted=False, income=income)
+		for i in related_services:
+			i.is_deleted = True
+			i.save()
 	return HttpResponseRedirect('/accounting/administrator/bill/today/')
 
 def admin_bill_search(request):
@@ -847,7 +864,7 @@ def admin_bill_today(request):
 		return HttpResponseRedirect('/accounting/')
 	start = now().date()
 	end = start + timedelta(days=1)
-	record = Income.objects.filter(date__range=(start, end),is_deleted=False,is_paid=True).order_by('-date')
+	record = Income.objects.filter(date__range=(start, end),is_deleted=False).order_by('-date')
 	total = 0
 	if record:
 		for i in record:
@@ -886,7 +903,7 @@ def admin_bill_yesterday(request):
 		return HttpResponseRedirect('/accounting/')
 	end = now().date()
 	start = end + timedelta(days=-1)
-	record = Income.objects.filter(date__range=(start, end),is_deleted=False,is_paid=True).order_by('-date')
+	record = Income.objects.filter(date__range=(start, end),is_deleted=False).order_by('-date')
 	total = 0
 	if record:
 		for i in record:
@@ -928,7 +945,7 @@ def admin_bill_month(request):
 		month = month + '-0' + str(now().month)
 	else:
 		month = month + '-' + str(now().month)
-	record = Income.objects.filter(is_deleted=False,is_paid=True,date__startswith=month).order_by('-date')
+	record = Income.objects.filter(is_deleted=False,date__startswith=month).order_by('-date')
 	total = 0
 	if record:
 		for i in record:
@@ -966,7 +983,7 @@ def admin_bill_year(request):
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
 	year = now().year
-	record = Income.objects.filter(date__year=year,is_deleted=False,is_paid=True).order_by('-date')
+	record = Income.objects.filter(date__year=year,is_deleted=False).order_by('-date')
 	total = 0
 	if record:
 		for i in record:
