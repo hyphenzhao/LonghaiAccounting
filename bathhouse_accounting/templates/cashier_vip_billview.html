@@ -10,7 +10,7 @@
 		<div class="col-12 text-center">
 			<div class="btn-group">
 				{% for i in pages_number %}
-					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/administrator/VIP/billview?page={{i}}">{{i|add:"1"}}</a>
+					<a class="btn btn-outline-primary {%if page_no == i %}active{% endif %}" href="/accounting/cashier/VIP/billview?vip_no={{vip.id}}&page={{i}}">{{i|add:"1"}}</a>
 				{% endfor %}
 			</div>
 		</div>
@@ -26,7 +26,13 @@
 				<tr>
 					<td>{{forloop.counter|add:base_no}}</td>
 					<td>{{i.date|date:"Y-m-d H:i"}}</td>
-					<td>{{i.total|floatformat}}</td>
+					<td>
+						{% if i.payment_method == current_multi_method %}
+							会员卡支付部分：
+						{% endif %}
+						{{i.total|floatformat}}
+						
+					</td>
 					<td>
 						{% for j in services|return_item:i.id %}
 						{{j.item.name}}¥{{j.item.price|floatformat}}x{{j.item_no|floatformat}}......{% with item_total=j.item.price|multiply:j.item_no %}¥{{item_total|floatformat}}{% endwith %}<br>

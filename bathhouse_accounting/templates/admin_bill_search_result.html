@@ -39,8 +39,18 @@
 							{{total|floatformat}}
 						{% endwith %}
 					</td>
-					<td>{{i.income.payment_method.name}}</td>
-					<td>{{i.staff.name}}</td>
+					<td>
+						{{i.income.payment_method.name}}
+						{% if i.income.payment_method.is_deleted %}
+						（已停用）
+						{% endif %}
+					</td>
+					<td>
+						{{i.staff.name}}
+						{% if i.staff.is_deleted %}
+						（已离职或删除）
+						{% endif %}
+					</td>
 					<td>{{i.item.promote_ratio|floatformat}}</td>
 				</tr>
 				{% endfor %}

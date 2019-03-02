@@ -71,7 +71,7 @@ class VIPTopupRecord(models.Model):
 			SystemUser,
 			on_delete=models.CASCADE,
 		)
-	# 1 for create, 2 for edit(topup), 3 for delete
+	# 1 for create, 2 for edit, 3 for delete, 4 for topup
 	operation = models.IntegerField()
 	note = models.CharField(max_length=60)
 	date = models.DateTimeField(auto_now_add=True, blank=True)
@@ -80,6 +80,7 @@ class VIPTopupRecord(models.Model):
 			on_delete=models.CASCADE,
 			null=True
 		)
+	amount = models.DecimalField(max_digits=25, decimal_places=15, default=0)
 
 class Income(models.Model):
 	customer_name = models.CharField(max_length=60, null=True)
@@ -105,7 +106,24 @@ class Income(models.Model):
 		)
 	is_deleted = models.BooleanField(default=False)
 	is_paid = models.BooleanField(default=False)
-
+class MultiPayment(models.Model):
+	payment = models.ForeignKey(
+			PaymentMethod,
+			on_delete=models.CASCADE,
+			null=True
+		)
+class MultiIncome(models.Model):
+	income = models.ForeignKey(
+			Income,
+			on_delete=models.CASCADE,
+		)
+	payment_method = models.ForeignKey(
+			PaymentMethod,
+			on_delete=models.CASCADE,
+			null=True
+		)
+	amount = models.DecimalField(max_digits=25, decimal_places=15, default=0.0)
+	is_deleted = models.BooleanField(default=False)
 class Service(models.Model):
 	income = models.ForeignKey(
 			Income,

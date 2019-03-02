@@ -1,0 +1,9 @@
+{% extends "cashier_base.html" %}
+{% load staticfiles %}
+{% block content %}
+<div style="background-color: white; padding: 20px;">
+	<div class="alert alert-danger"><h5>结账错误！</h5></div>
+	<div class="alert alert-danger"><h5>错误原因：{{error_message}}</h5></div>
+	<a href="/accounting/cashier/bill/edit?income_id={{income_id}}" class="btn btn-lg btn-secondary">返回</a>
+</div>
+{% endblock %}

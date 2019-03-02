@@ -215,6 +215,9 @@ def cashier_vip_topup(request):
 	if methods:
 		first_method = methods[0]
 	vip_method_exist = VIPPayment.objects.all()
+	multi_method_exist = MultiPayment.objects.all()
+	if multi_method_exist:
+		multi_method = multi_method_exist.order_by('id')[0].payment
 	if vip_method_exist:
 		vip_method = vip_method_exist.order_by('id')[0].payment
 	if request.method == "POST":
@@ -226,9 +229,10 @@ def cashier_vip_topup(request):
 		new_record = VIPTopupRecord(
 			vip=vip,
 			recorder=system_user,
-			operation=2,
+			operation=4,
 			payment_method=payment_method,
 			note="充值" + total + "元，充值方式：" + payment_method.name,
+			amount=Decimal(total)
 			)
 		new_record.save()
 		return HttpResponseRedirect('/accounting/cashier/VIP/')
@@ -237,6 +241,7 @@ def cashier_vip_topup(request):
 		"tag":"vip",
 		"methods": methods,
 		"vip_method": vip_method,
+		"multi_method": multi_method,
 		"first_method": first_method
 	}
 	return render(request, "cashier_vip_topup.html", context)
@@ -270,17 +275,24 @@ def cashier_vip_billview(request):
 	vip_no = request.GET['vip_no']
 	vip = VIP.objects.get(pk=vip_no)
 	record = Income.objects.filter(is_deleted=False, vip=vip)
+	current_multi_method = MultiPayment.objects.all().order_by('-id')[0]
+	current_vip_method = VIPPayment.objects.all().order_by('-id')[0]
 	services = {}
 	for i in record:
 		tmp_services = Service.objects.filter(is_deleted=False, income=i)
 		services[i.id] = tmp_services
+		if i.payment_method == current_multi_method.payment:
+			multi_incomes = MultiIncome.objects.filter(is_deleted=False, income=i)
+			for j in multi_incomes:
+				if j.payment_method == current_vip_method.payment:
+					i.total = j.amount
 	pages_number = 0
 	start_no = 0
 	page_no = 0
 	if len(record) > 50:
 		pages_number = int(math.ceil(len(record)/50.0))
 		if "page" not in request.GET:
-			return HttpResponseRedirect("/accounting/administrator/VIP/paymentrecord?page=0")
+			return HttpResponseRedirect("/accounting/cashier/VIP/billview?vip_no="+ str(vip.id) + "&page=0")
 	if "page" in request.GET:
 		page_no = int(request.GET['page'])
 		start_no = page_no * 50
@@ -295,7 +307,8 @@ def cashier_vip_billview(request):
 		"pages_number": range(pages_number),
 		"page_no": page_no,
 		"records": record,
-		"services": services
+		"services": services,
+		"current_multi_method": current_multi_method.payment
 	}
 	return render(request, "cashier_vip_billview.html", context)
 
@@ -309,20 +322,40 @@ def cashier_daily(request):
 	start = now().date()
 	end = start + timedelta(days=1)
 	records = Income.objects.filter(date__range=(start, end),is_deleted=False,is_paid=True,recorder=system_user)
+	vip_records = VIPTopupRecord.objects.filter(date__range=(start, end), recorder=system_user)
+	current_vip_method = VIPPayment.objects.all().order_by('-id')[0]
+	current_multi_method = MultiPayment.objects.all().order_by('-id')[0]
 	total_dict = {}
+	vip_total_dict = {}
 	payment_methods = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
 	final_total = 0
+	vip_final_total = 0
 	for i in payment_methods:
+		if i != current_multi_method.payment and i != current_vip_method.payment:
+			vip_total = 0
+			vip_records_paid = vip_records.filter(payment_method=i)
+			for j in vip_records_paid:
+				vip_total += j.amount
+			vip_total_dict[i.name] = vip_total
+			vip_final_total += vip_total
 		total = 0
 		records_paid = records.filter(payment_method=i)
 		for j in records_paid:
 			total = total + j.total
-		total_dict[i.name] = total
+		if i.id == current_multi_method.payment.id:
+			for j in records_paid:
+				multi_incomes = MultiIncome.objects.filter(is_deleted=False, income=j)
+				for k in multi_incomes:
+					total_dict[k.payment_method.name] += k.amount
+		else:
+			total_dict[i.name] = total
 		final_total = final_total + total
 	context = {
 		"tag":"daily",
 		"totals": total_dict,
+		"vip_totals": vip_total_dict,
 		"final_total": final_total,
+		"vip_final_total": vip_final_total,
 		"time": now().date(),
 		"recorder": system_user,
 		"number": len(records)
@@ -414,7 +447,8 @@ def cashier_bill_edit(request):
 	items = Item.objects.filter(is_deleted=False).order_by("priority")
 	staffs = Staff.objects.filter(title__priviledge=100,is_deleted=False)
 	payment_methods = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
-	current_method = VIPPayment.objects.all().order_by('-id')[0]
+	current_vip_method = VIPPayment.objects.all().order_by('-id')[0]
+	current_multi_method = MultiPayment.objects.all().order_by('-id')[0]
 	total = 0
 	previous_service = None
 	if services.exists():
@@ -473,7 +507,8 @@ def cashier_bill_edit(request):
 		"staffs": staffs,
 		"current_user": system_user,
 		"methods": payment_methods,
-		"current_method": current_method,
+		"current_vip_method": current_vip_method,
+		"current_multi_method": current_multi_method,
 		"first_method": first_method,
 		"previous_service": previous_service,
 		"deleteable": income_deleteable
@@ -494,6 +529,7 @@ def cashier_bill_pay(request):
 	services = Service.objects.filter(income=income,is_deleted=False)
 	payment_methods = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
 	current_method = VIPPayment.objects.all().order_by('-id')[0]
+	current_multi_method = MultiPayment.objects.all().order_by('-id')[0]
 	total = 0
 	if services.exists():
 		for i in services:
@@ -515,6 +551,84 @@ def cashier_bill_pay(request):
 				if vip_user and vip_user.order_by('-id')[0].password == password:
 					vip = vip_user.order_by('-id')[0]
 					auth_check = True
+			elif vip_pay == "multi":
+				payments = {}
+				current_amount = 0
+				received_vip = None
+				for i in payment_methods:
+					if i.id != current_multi_method.payment.id:
+						if i.id == current_method.payment.id:
+							received_vip = request.POST['multi_vip_no']
+						received_payment = Decimal(request.POST['multi_id_' + str(i.id)])
+						if received_payment < 0:
+							context = {
+								"tag":"vip",
+								"error_message": "单项支付不可为负数。",
+								"income_id": income_id
+							}
+							return render(request, "cashier_multi_payment_failed.html", context)
+						current_amount = current_amount + received_payment
+						payments[i.id] = received_payment
+				if current_amount != total:
+					context = {
+						"tag":"vip",
+						"error_message": "支付总额错误。",
+						"income_id": income_id
+					}
+					return render(request, "cashier_multi_payment_failed.html", context)
+				if payments[current_method.payment.id] > 0:
+					vip_user = VIP.objects.filter(is_deleted=False, card_no=received_vip)
+					if vip_user:
+						vip = vip_user.order_by('-id')[0]
+						auth_check = True
+					if auth_check and vip.balance >= total:
+						vip.balance = vip.balance - total
+						vip.save()
+						income.customer_name = vip.holder
+						income.vip = vip
+						new_multi_income = MultiIncome(
+								income=income,
+								payment_method=current_method.payment,
+								amount=payments[current_method.payment.id]
+							)
+						new_multi_income.save()
+					else:
+						vip = None
+						if auth_check:
+							error_message = "余额不足，请充值后支付"
+							vip = vip_user.order_by('-id')[0]
+						else:
+							error_message = "用户不存在，请返回重新刷卡"
+						context = {
+							"tag":"vip",
+							"error_message": error_message,
+							"vip": vip,
+							"income_id": income_id
+						}
+						return render(request, "cashier_vip_pay_failed.html", context)
+				for i in payment_methods:
+					if i.id != current_multi_method.payment.id and i.id != current_method.payment.id and payments[i.id] > 0:
+						new_multi_income = MultiIncome(
+								income=income,
+								payment_method=i,
+								amount=payments[i.id]
+							)
+						new_multi_income.save()
+				income.total = total
+				income.is_paid = True
+				income.paid_date = now()
+				income.payment_method = current_multi_method.payment
+				income.save()
+				if payments[current_method.payment.id] > 0:
+					context = {
+						"tag":"bill",
+						"vip": vip,
+						"income_id": income_id,
+						"total": payments[current_method.payment.id],
+						"time": income.date
+					}
+					return render(request, "cashier_vip_pay_success.html", context)
+				return HttpResponseRedirect("/accounting/cashier/bill/")
 			if auth_check and vip.balance >= total:
 				vip.balance = vip.balance - total
 				vip.save()
@@ -584,6 +698,12 @@ def admin_bill_index(request):
 		for i in related_services:
 			i.is_deleted = True
 			i.save()
+		if income.is_paid:
+			multi_incomes = MultiIncome.objects.filter(income=income, is_deleted=False)
+			if multi_incomes:
+				for i in multi_incomes:
+					i.is_deleted = True
+					i.save()
 	return HttpResponseRedirect('/accounting/administrator/bill/today/')
 
 def admin_bill_search(request):
@@ -593,8 +713,8 @@ def admin_bill_search(request):
 	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
-	servants = Staff.objects.filter(is_deleted=False, title__priviledge=100)
-	methods = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
+	servants = Staff.objects.filter(title__priviledge=100)
+	methods = PaymentMethod.objects.all().order_by("priority")
 	incomes = Income.objects.all().order_by("date")
 	if incomes:
 		first_income = incomes[0]
@@ -845,6 +965,16 @@ def admin_bill_view(request):
 	error_message = None
 	if record.is_deleted:
 		error_message = "已删除"
+	current_total = 0
+	for i in services:
+		if not i.is_deleted:
+			current_total += i.item.price * i.item_no
+	current_multi_method = MultiPayment.objects.all().order_by('id')[0]
+	is_multi_paid = False
+	multi_incomes = None
+	if record.is_paid and record.payment_method == current_multi_method.payment:
+		multi_incomes = MultiIncome.objects.filter(is_deleted=False, income=record)
+		is_multi_paid = True
 	context = {
 		"tag":"bill",
 		"label": "view_detail",
@@ -852,100 +982,70 @@ def admin_bill_view(request):
 		"record": record,
 		"vip_paid": vip_paid,
 		"error_message": error_message,
+		"current_total":current_total,
+		"is_multi_paid": is_multi_paid,
+		"multi_incomes": multi_incomes,
 	}
 	return render(request, "admin_bill_view.html", context)
 
-def admin_bill_today(request):
+def admin_bill_all(request, period):
 	if 'user_id' not in request.session:
 		return HttpResponseRedirect('/accounting/')
 	user_id = request.session['user_id']
 	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
-	start = now().date()
-	end = start + timedelta(days=1)
-	record = Income.objects.filter(date__range=(start, end),is_deleted=False).order_by('-date')
-	total = 0
-	if record:
-		for i in record:
-			total = total + i.total
-	pages_number = 0
-	start_no = 0
-	page_no = 0
-	if len(record) > 50:
-		pages_number = int(math.ceil(len(record)/50.0))
-		if "page" not in request.GET:
-			return HttpResponseRedirect("/accounting/administrator/bill/today?page=0")
-	if "page" in request.GET:
-		page_no = int(request.GET['page'])
-		start_no = page_no * 50
-		if len(record) - start_no >= 50:
-			record = record[start_no:start_no + 50]
+	record = None
+	vip_topup_records = None
+	redirect_url = "/accounting/administrator/bill/"
+	if period == "today":
+		start = now().date()
+		end = start + timedelta(days=1)
+		record = Income.objects.filter(date__range=(start, end),is_deleted=False).order_by('-date')	
+		vip_topup_records = VIPTopupRecord.objects.filter(date__range=(start, end), operation=4)
+	elif period == "yesterday":
+		end = now().date()
+		start = end + timedelta(days=-1)
+		record = Income.objects.filter(date__range=(start, end),is_deleted=False).order_by('-date')
+		vip_topup_records = VIPTopupRecord.objects.filter(date__range=(start, end), operation=4)
+	elif period == "month":
+		month = str(now().year)
+		if now().month < 10:
+			month = month + '-0' + str(now().month)
 		else:
-			record = record[start_no:]
-	context = {
-		"record":record,
-		"tag":"bill",
-		"label": "today",
-		"total":total,
-		"base_no": start_no,
-		"pages_number": range(pages_number),
-		"page_no": page_no
-	}
-	return render(request,"admin_bill_today.html", context)
-
-def admin_bill_yesterday(request):
-	if 'user_id' not in request.session:
-		return HttpResponseRedirect('/accounting/')
-	user_id = request.session['user_id']
-	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
-	if system_user.role != 'admin' or system_user.is_deleted:
-		return HttpResponseRedirect('/accounting/')
-	end = now().date()
-	start = end + timedelta(days=-1)
-	record = Income.objects.filter(date__range=(start, end),is_deleted=False).order_by('-date')
-	total = 0
-	if record:
-		for i in record:
-			total = total + i.total
-	pages_number = 0
-	start_no = 0
-	page_no = 0
-	if len(record) > 50:
-		pages_number = int(math.ceil(len(record)/50.0))
-		if "page" not in request.GET:
-			return HttpResponseRedirect("/accounting/administrator/bill/yesterday?page=0")
-	if "page" in request.GET:
-		page_no = int(request.GET['page'])
-		start_no = page_no * 50
-		if len(record) - start_no >= 50:
-			record = record[start_no:start_no + 50]
-		else:
-			record = record[start_no:]
-	context = {
-		"record":record,
-		"tag":"bill",
-		"label": "yesterday",
-		"total":total,
-		"base_no": start_no,
-		"pages_number": range(pages_number),
-		"page_no": page_no
-	}
-	return render(request,"admin_bill_today.html", context)
-
-def admin_bill_month(request):
-	if 'user_id' not in request.session:
-		return HttpResponseRedirect('/accounting/')
-	user_id = request.session['user_id']
-	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
-	if system_user.role != 'admin' or system_user.is_deleted:
-		return HttpResponseRedirect('/accounting/')
-	month = str(now().year)
-	if now().month < 10:
-		month = month + '-0' + str(now().month)
+			month = month + '-' + str(now().month)
+		record = Income.objects.filter(is_deleted=False,date__startswith=month).order_by('-date')
+		vip_topup_records = VIPTopupRecord.objects.filter(date__startswith=month, operation=4)
+	elif period == "year":
+		year = now().year
+		record = Income.objects.filter(date__year=year,is_deleted=False).order_by('-date')
+		vip_topup_records = VIPTopupRecord.objects.filter(date__year=year, operation=4)
 	else:
-		month = month + '-' + str(now().month)
-	record = Income.objects.filter(is_deleted=False,date__startswith=month).order_by('-date')
+		return HttpResponseRedirect(redirect_url)
+	methods = PaymentMethod.objects.all()
+	amount_by_methods = {}
+	vip_amount_by_methods = {}
+	for i in methods:
+		amount_by_methods[i.id] = 0
+		vip_amount_by_methods[i.id] = 0
+	vip_topup_amount = 0
+	if vip_topup_records:
+		for i in vip_topup_records:
+			vip_topup_amount += i.amount
+			vip_amount_by_methods[i.payment_method.id] += i.amount
+	redirect_url += period
+	current_vip_method = VIPPayment.objects.all().order_by("-id")[0]
+	current_multi_method = MultiPayment.objects.all().order_by("-id")[0]
+	
+	if record:
+		for i in record:
+			if i.is_paid:
+				if i.payment_method == current_multi_method.payment:
+					multi_incomes = MultiIncome.objects.filter(is_deleted=False, income=i)
+					for j in multi_incomes:
+						amount_by_methods[j.payment_method.id] += j.amount
+				else:
+					amount_by_methods[i.payment_method.id] += i.total
 	total = 0
 	if record:
 		for i in record:
@@ -956,7 +1056,7 @@ def admin_bill_month(request):
 	if len(record) > 50:
 		pages_number = int(math.ceil(len(record)/50.0))
 		if "page" not in request.GET:
-			return HttpResponseRedirect("/accounting/administrator/bill/month?page=0")
+			return HttpResponseRedirect(redirect_url + "?page=0")
 	if "page" in request.GET:
 		page_no = int(request.GET['page'])
 		start_no = page_no * 50
@@ -967,49 +1067,18 @@ def admin_bill_month(request):
 	context = {
 		"record":record,
 		"tag":"bill",
-		"label": "month",
-		"total":total,
-		"pages_number": range(pages_number),
-		"base_no": start_no,
-		"page_no": page_no
-	}
-	return render(request,"admin_bill_today.html", context)
-
-def admin_bill_year(request):
-	if 'user_id' not in request.session:
-		return HttpResponseRedirect('/accounting/')
-	user_id = request.session['user_id']
-	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
-	if system_user.role != 'admin' or system_user.is_deleted:
-		return HttpResponseRedirect('/accounting/')
-	year = now().year
-	record = Income.objects.filter(date__year=year,is_deleted=False).order_by('-date')
-	total = 0
-	if record:
-		for i in record:
-			total = total + i.total
-	pages_number = 0
-	start_no = 0
-	page_no = 0
-	if len(record) > 50:
-		pages_number = int(math.ceil(len(record)/50.0))
-		if "page" not in request.GET:
-			return HttpResponseRedirect("/accounting/administrator/bill/year?page=0")
-	if "page" in request.GET:
-		page_no = int(request.GET['page'])
-		start_no = page_no * 50
-		if len(record) - start_no >= 50:
-			record = record[start_no:start_no + 50]
-		else:
-			record = record[start_no:]
-	context = {
-		"record":record,
-		"tag":"bill",
-		"label": "year",
+		"label": period,
 		"total":total,
 		"base_no": start_no,
 		"pages_number": range(pages_number),
-		"page_no": page_no
+		"page_no": page_no,
+		"methods": methods,
+		"amount_by_methods": amount_by_methods,
+		"current_vip_method": current_vip_method,
+		"current_multi_method": current_multi_method,
+		"vip_topup_records": vip_topup_records,
+		"vip_topup_amount": vip_topup_amount,
+		"vip_amount_by_methods": vip_amount_by_methods,
 	}
 	return render(request,"admin_bill_today.html", context)
 
@@ -1194,12 +1263,34 @@ def admin_payment_method(request):
 			else:
 				pre_item = i
 	record = PaymentMethod.objects.filter(is_deleted=False).order_by("priority")
+	methods = PaymentMethod.objects.all()
+	current_method = None
+	if MultiPayment.objects.all():
+		current_method = MultiPayment.objects.all().order_by('-id')[0]
 	context = {
 		"record":record,
 		"tag":"payment",
+		"methods":methods,
+		"current_method": current_method,
 	}
 	return render(request,"admin_payment_method.html", context)
-
+def admin_payment_method_multipayment(request):
+	if 'user_id' not in request.session:
+		return HttpResponseRedirect('/accounting/')
+	user_id = request.session['user_id']
+	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
+	if system_user.role != 'admin' or system_user.is_deleted:
+		return HttpResponseRedirect('/accounting/')
+	if request.method == "POST":
+		payment_method = request.POST['payment_method']
+		payment = PaymentMethod.objects.get(pk=payment_method)
+		if MultiPayment.objects.all(): 
+			MultiPayment.objects.all().delete()
+		new_payment = MultiPayment(
+			payment=payment
+			)
+		new_payment.save()
+	return HttpResponseRedirect('/accounting/administrator/payment-method/')
 def admin_service(request):
 	if 'user_id' not in request.session:
 		return HttpResponseRedirect('/accounting/')
@@ -1282,7 +1373,8 @@ def admin_VIP(request):
 						vip=new_vip,
 						recorder=system_user,
 						operation=1,
-						note=note
+						note=note,
+						amount=new_vip_balance
 					)
 				new_vip_record.save()
 		return HttpResponseRedirect('/accounting/administrator/VIP/')
@@ -1323,14 +1415,20 @@ def admin_VIP_viewbill(request):
 		return HttpResponseRedirect('/accounting/')
 	vip_no = request.GET['no']
 	vip = VIP.objects.get(pk=vip_no)
-	record = Income.objects.filter(is_deleted=False, vip=vip)
+	record = Income.objects.filter(is_deleted=False, vip=vip).order_by("-id")
+	vip_paymethod = VIPPayment.objects.all().order_by('-id')[0]
+	multi_paymethod = MultiPayment.objects.all().order_by('-id')[0]
+	multi_incomes = MultiIncome.objects.filter(is_deleted=False,payment_method=vip_paymethod.payment)
+	vip_paid_part = {}
+	for i in multi_incomes:
+		vip_paid_part[i.income.id] = i.amount
 	pages_number = 0
 	start_no = 0
 	page_no = 0
 	if len(record) > 50:
 		pages_number = int(math.ceil(len(record)/50.0))
 		if "page" not in request.GET:
-			return HttpResponseRedirect("/accounting/administrator/VIP/paymentrecord?page=0")
+			return HttpResponseRedirect("/accounting/administrator/VIP/viewbill?page=0&no=" + str(vip_no))
 	if "page" in request.GET:
 		page_no = int(request.GET['page'])
 		start_no = page_no * 50
@@ -1345,7 +1443,9 @@ def admin_VIP_viewbill(request):
 		"vip":vip,
 		"base_no": start_no,
 		"pages_number": range(pages_number),
-		"page_no": page_no
+		"page_no": page_no,
+		"vip_paid_part": vip_paid_part,
+		"multi_paymethod": multi_paymethod.payment
 	}
 	return render(request, "admin_vip_viewbill.html", context)
 def admin_VIP_topuprecord(request):
@@ -1388,7 +1488,17 @@ def admin_VIP_paymentrecord(request):
 	if system_user.role != 'admin' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
 	vip_paymethod = VIPPayment.objects.all().order_by('-id')[0]
+	multi_paymethod = MultiPayment.objects.all().order_by('-id')[0]
 	record = Income.objects.filter(is_deleted=False,payment_method__id=vip_paymethod.payment.id,is_paid=True).order_by("-id")
+	multi_incomes = MultiIncome.objects.filter(is_deleted=False,payment_method=vip_paymethod.payment)
+	multi_income_id_set = set()
+	vip_paid_part = {}
+	for i in multi_incomes:
+		multi_income_id_set.add(i.income.id)
+		vip_paid_part[i.income.id] = i.amount
+	rest_records = Income.objects.filter(pk__in=multi_income_id_set)
+	record |= rest_records
+	record.order_by("-id")
 	pages_number = 0
 	start_no = 0
 	page_no = 0
@@ -1409,7 +1519,9 @@ def admin_VIP_paymentrecord(request):
 		"label": "paymentrecord",
 		"base_no": start_no,
 		"pages_number": range(pages_number),
-		"page_no": page_no
+		"page_no": page_no,
+		"vip_paid_part": vip_paid_part,
+		"multi_paymethod": multi_paymethod.payment
 	}
 	return render(request, "admin_vip_paymentrecord.html", context)
 
@@ -1458,7 +1570,8 @@ def admin_VIP_update(request):
 			vip=record,
 			recorder=system_user,
 			operation=2,
-			note=note
+			note=note,
+			amount=diff
 		)
 		new_vip_record.save()
 		return HttpResponseRedirect('/accounting/administrator/VIP/') 

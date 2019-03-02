@@ -1,7 +1,74 @@
 {% extends "admin_bill_base.html" %}
 {% load staticfiles %}
+{% load accounting_extras %}
 {% block content %}
 <div class="container" style="background-color: white; padding: 20px;">
+	{% if label != "droped" %}
+	<div class="row">
+		<div class="col-6">
+			<table class="table table-condensed table-bordered table-striped">
+			<thead>
+				<tr>
+					<td colspan="2">
+						账目小结
+					</td>
+				</tr>
+				<tr>
+					<td>支付方式</td>
+					<td>收入金额</td>
+				</tr>
+			</thead>
+			<tbody>
+				{% for i in methods %}
+				{% if not i.is_deleted %}
+				{% if i != current_multi_method.payment %}
+				<tr>
+					<td>{{i.name}}</td>
+					<td>{{amount_by_methods|return_item:i.id|floatformat}}</td>
+				</tr>
+				{% endif %}
+				{% endif %}
+				{% endfor %}
+				<tr>
+					<td>总金额：</td>
+					<td>{{total|floatformat}}</td>
+				</tr>
+			</tbody>
+			</table>
+		</div>
+		<div class="col-6">
+			<table class="table table-condensed table-bordered table-striped">
+			<thead>
+				<tr>
+					<td colspan="2">
+						会员卡账目小结
+					</td>
+				</tr>
+				<tr>
+					<td>支付方式</td>
+					<td>收入金额</td>
+				</tr>
+			</thead>
+			<tbody>
+				{% for i in methods %}
+				{% if not i.is_deleted %}
+				{% if i != current_multi_method.payment and i != current_vip_method.payment %}
+				<tr>
+					<td>{{i.name}}</td>
+					<td>{{vip_amount_by_methods|return_item:i.id|floatformat}}</td>
+				</tr>
+				{% endif %}
+				{% endif %}
+				{% endfor %}
+				<tr>
+					<td>总金额：</td>
+					<td>{{vip_topup_amount|floatformat}}</td>
+				</tr>
+			</tbody>
+			</table>
+		</div>
+	</div>
+	{% endif %}
 	<div class="row" style="padding: 20px;">
 		<div class="col-6">
 			<h3>账目管理</h3>
@@ -102,19 +169,22 @@
 						{% endif %}
 					</td>
 					<td>
-						{{i.payment_method.name}}
 						{% if not i.is_paid %}
 						未支付
+						{% else %}
+						{{i.payment_method.name}}{% if i.payment_method.is_deleted %}
+						（已停用）
+						{% endif %}
 						{% endif %}
 					</td>
-					<td>{{i.recorder.user.first_name}}</td>
+					<td>{{i.recorder.user.first_name}}{% if i.recorder.is_deleted %}（已离职或删除）{% endif %}</td>
 					<td><a href="/accounting/administrator/bill/view?income_id={{i.id}}" class="btn btn-primary">查看详细</a>
-					{% if not i.is_paid and not i.is_deleted %}
+					{% if not i.is_deleted %}
 						<form action="/accounting/administrator/bill/" id="form_{{i.id}}" method="POST">
 							{% csrf_token %}
 							<input type="hidden" name="income_id" value="{{i.id}}" />
 							<input type="hidden" name="delete_element"/>
-							<button class='btn btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{i.id}}')">销台</button>
+							<button class='btn btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{i.id}}')">{% if i.is_paid %}删除账单{% else %}销台:{%if i.gender%}女{%else%}男{%endif%}{{i.card_no|add:1}}{% endif %}</button>
 						</form>
 					{% endif %}
 					</td>
@@ -124,7 +194,7 @@
 						{% elif i.is_paid %}
 						<div class="alert alert-success" role="alert">已付款</div>
 						{% else %}
-						<div class="alert alert-primary" role="alert">尚未付款</div>
+						<div class="alert alert-primary" role="alert">尚未付款-手牌{{i.card_no|add:1}}{%if i.gender%}女{%else%}男{%endif%}</div>
 						{% endif %}
 					</td>
 				</tr>

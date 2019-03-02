@@ -1,5 +1,6 @@
 {% extends "admin_vip_base.html" %}
 {% load staticfiles %}
+{% load accounting_extras %}
 {% block content %}
 <div class="container" style="background-color: white; padding: 20px;">
 	<div class="row" style="padding: 20px;">
@@ -68,7 +69,8 @@
 			<thead>
 				<td>编号</td>
 				<td>时间</td>
-				<td>金额</td>
+				<td>总金额</td>
+				<td>会员卡支付</td>
 				<td>卡号</td>
 				<td>会员名</td>
 				<td>记录员</td>
@@ -80,10 +82,17 @@
 					<td>{{forloop.counter|add:base_no}}</td>
 					<td>开台：{{i.date|date:"Y-m-d H:i"}}<br>结账：{{i.paid_date|date:"Y-m-d H:i"}}</td>
 					<td>{{i.total|floatformat}}</td>
+					<td>
+						{% if i.payment_method == multi_paymethod %}
+						{{vip_paid_part|return_item:i.id|floatformat}}
+						{% else %}
+						{{i.total|floatformat}}
+						{% endif %}
+					</td>
 					<td>{{i.vip.card_no}}</td>
 					<td>{{i.vip.holder}}</td>
 					<td>{{i.recorder.user.first_name}}</td>
-					<td><a href="/accounting/administrator/VIP/view?income_id={{i.id}}" class="btn btn-primary">查看详细</a></td>
+					<td><a href="/accounting/administrator/bill/view?income_id={{i.id}}" class="btn btn-primary">查看详细</a></td>
 				</tr>
 				{% endfor %}
 			</tbody>

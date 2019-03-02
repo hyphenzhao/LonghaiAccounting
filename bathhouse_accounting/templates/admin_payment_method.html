@@ -3,6 +3,20 @@
 {% block content %}
 <div class="container" style="background-color: white; padding: 20px;">
 	<div class="row" style="padding: 20px;">
+		<div class="col-12">
+			<form action="/accounting/administrator/payment-method/multipayment/" method="POST">
+			{% csrf_token %}
+			<label for="payment_method">更改混合支付入口：</label>
+			<select class="custom-select" id="payment_method" name="payment_method">
+				{% for i in record %}
+				<option value="{{i.id}}" {% if current_method and current_method.payment.id == i.id %} selected="selected"{% endif %}>
+					{{i.name}}
+				</option>
+				{% endfor %}
+			</select>
+			<button class="btn btn-success">更新入口</button>
+		</form>
+		</div>
 		<div class="col-6">
 			<h3>付款方式</h3>
 		</div>

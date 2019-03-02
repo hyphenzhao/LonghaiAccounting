@@ -3,34 +3,61 @@
 {% block content %}
 <div style="background-color: white; padding: 20px;">
 	<div class="row" style="padding: 20px;">
-		<div class="col-12"  style="font-size: 9px;">
-			{{time|date:"Y-m-d"}} 日结账单<br>
-			交班人：{{recorder.user.first_name}}({{recorder.user.username}})<br>
-			总数：{{number}}
+		<div id="printable">
+			<div class="col-12"  style="font-size: 9px;">
+				{{time|date:"Y-m-d"}} 日结账单<br>
+				交班人：{{recorder.user.first_name}}({{recorder.user.username}})<br>
+				总数：{{number}}
+			</div>
+			<table class="table" style="font-size: 9px;">
+				<thead>
+					<td>编号</td>
+					<td>付款方式</td>
+					<td>付款总额</td>
+				</thead>
+				<tbody>
+					{% for key,value in totals.items%}
+					<tr>
+						<td>{{forloop.counter}}</td>
+						<td>{{key}}</td>
+						<td>{{value|floatformat}}</td>
+					</tr>
+					{% endfor %}
+					<tr>
+						<td></td>
+						<td>总金额：</td>
+						<td>{{final_total|floatformat}}</td>
+					</tr>
+				</tbody>
+			</table>
+			<div style="font-size: 9px;">
+			<p>--------------------------</p>
+			<p>会员卡充值日结</p>
+			</div>
+			<table class="table" style="font-size: 9px;">
+				<thead>
+					<td>编号</td>
+					<td>付款方式</td>
+					<td>付款总额</td>
+				</thead>
+				<tbody>
+					{% for key,value in vip_totals.items%}
+					<tr>
+						<td>{{forloop.counter}}</td>
+						<td>{{key}}</td>
+						<td>{{value|floatformat}}</td>
+					</tr>
+					{% endfor %}
+					<tr>
+						<td></td>
+						<td>总金额：</td>
+						<td>{{vip_final_total|floatformat}}</td>
+					</tr>
+				</tbody>
+			</table>
 		</div>
-		<table class="table" style="font-size: 9px;">
-			<thead>
-				<td>编号</td>
-				<td>付款方式</td>
-				<td>付款总额</td>
-			</thead>
-			<tbody>
-				{% for key,value in totals.items%}
-				<tr>
-					<td>{{forloop.counter}}</td>
-					<td>{{key}}</td>
-					<td>{{value|floatformat}}</td>
-				</tr>
-				{% endfor %}
-				<tr>
-					<td></td>
-					<td>总金额：</td>
-					<td>{{final_total|floatformat}}</td>
-				</tr>
-			</tbody>
-		</table>
-		<div class="row">
-			<button class="btn btn-primary" onclick="print_and_exit()">打印并退出</button>
+		<div class="col-12">
+			<button class="btn btn-primary" onclick="print_and_exit('printable')">打印并退出</button>
 		</div>
 	</div>
 </div>

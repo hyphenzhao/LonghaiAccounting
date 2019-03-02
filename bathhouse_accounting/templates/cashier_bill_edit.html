@@ -65,7 +65,8 @@
 				<div class="row">
 					<div class="col-12">
 						<input type="hidden" name="payment_method" id="payment_method" value="{{first_method.id}}"/>
-						<input type="hidden" name="current_method" id="current_method" value="{{current_method.payment.id}}"/>
+						<input type="hidden" name="current_vip_method" id="current_vip_method" value="{{current_vip_method.payment.id}}"/>
+						<input type="hidden" name="current_multi_method" id="current_multi_method" value="{{current_multi_method.payment.id}}"/>
 						<label for="payment_method">支付方式：</label>
 						{% for i in methods%}
 							{% if i.id == first_method.id %}
@@ -73,6 +74,23 @@
 							{% else %}
 							<button type="button" name="payment_select_button" class="btn btn-lg btn-outline-primary" id="payment_select_button_{{i.id}}" onclick="payment_method_onclick({{i.id}})">{{i.name}}<br></button>
 							{% endif %}
+						{% endfor %}
+					</div>
+					<div class="col-12" id="payment_multi_method" hidden>
+						{% for i in methods%}
+						{% if i.id != current_multi_method.payment.id%}
+						<div class="row">
+							<div class="col-3 border-bottom">
+								<label>{{i.name}}:<br></label>
+							</div>
+							<div class="col-9 border-bottom">
+							{% if i.id == current_vip_method.payment.id %}
+							<input type='input' class='form-control' name="multi_vip_no" placeholder="会员卡号" />
+							{% endif %}
+							<input type='input' class='form-control' name="multi_id_{{i.id}}" placeholder="金额" value="0" />
+							</div>
+						</div>
+						{% endif %}
 						{% endfor %}
 					</div>
 					<div class="col-6" id="payment_auth_method" hidden>

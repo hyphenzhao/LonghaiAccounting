@@ -9,17 +9,27 @@
 				<h5>开台时间：{{record.date|date:"Y-m-d H:i"}} <br>支付时间：{{record.paid_date|date:"Y-m-d H:i"}}<br>{% if vip_paid %}VIP：{{record.vip.holder}} {% endif %} </h5>
 			</div>
 			<div class="col-6 text-center">
-				{% if error_message %}
+				{% if record.is_deleted %}
 				<div class="alert alert-danger" role="alert"><h5>{{error_message}}</h5></div>
-				{% else %}
+				{% elif record.is_paid %}
 				<div class="alert alert-success" role="alert"><h5>已付款</h5></div>
+				{% else %}
+				<div class="alert alert-primary text-center" role="alert">尚未付款</div>
 				{% endif %}
 			</div>
 			<div class="col-6">
 				<h5>前台：{{record.recorder.user.first_name}}<br>顾客手牌号：{{record.card_no|add:"1"}}</h5>
 			</div>
 			<div class="col-6">
+				{% if is_multi_paid %}
+					混合支付账单不可更改<br>				
+				{% endif %}
+				{% if record.is_deleted %}
+					删除账单不可恢复，可通过前台重建订单<br>
+				{% endif %}
+				{% if not record.is_deleted and not is_multi_paid %}
 				<a class="btn btn-success" href="/accounting/administrator/bill/newitem?income_id={{record.id}}">+新增项目</a>
+				{% endif %}
 			</div>
 		</div>
 		<table class="table table-condensed table-bordered table-striped">
@@ -43,19 +53,25 @@
 					<td>
 						{% if i.is_deleted %}
 						<div class="alert alert-danger text-center" role="alert">已删除({%if i.deleter%}{{i.deleter.user.first_name}}{%else%}{{i.recorder.user.first_name}}{%endif%})</div>
-						{% else %}
+						{% elif record.is_paid %}
 						<div class="alert alert-success text-center" role="alert">已付款</div>
+						{% else %}
+						<div class="alert alert-primary text-center" role="alert">尚未付款</div>
 						{% endif %}
 					</td>
 					<td>
-						{%if not i.is_deleted%}
-						<form id="form_{{i.id}}"style="width: 100%;" action="/accounting/administrator/bill/view?income_id={{record.id}}" method="POST">
-						{% csrf_token %} 
-							<a class="btn btn-warning" href="/accounting/administrator/bill/edititem?service_id={{i.id}}">修改</a>
-							<input type="hidden" id="service_id" name="service_id" value="{{i.id}}" />
-							<input type="hidden" name="delete_element" value="delete_element" />
-							<button class='btn btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{i.id}}')">删除</button>
-						</form>
+						{% if is_multi_paid%}
+							混合支付账单不可更改
+						{% else %}
+							{%if not i.is_deleted%}
+							<form id="form_{{i.id}}"style="width: 100%;" action="/accounting/administrator/bill/view?income_id={{record.id}}" method="POST">
+							{% csrf_token %} 
+								<a class="btn btn-warning" href="/accounting/administrator/bill/edititem?service_id={{i.id}}">修改</a>
+								<input type="hidden" id="service_id" name="service_id" value="{{i.id}}" />
+								<input type="hidden" name="delete_element" value="delete_element" />
+								<button class='btn btn-danger' type="button" name="delete_element" onclick="delete_element_method('form_{{i.id}}')">删除</button>
+							</form>
+							{%endif%}
 						{%endif%}
 					</td>
 				</tr>
@@ -67,7 +83,17 @@
 					<td></td>
 					<td></td>
 					<td>总金额：</td>
-					<td id="total_payment">{{record.total|floatformat}}</td>
+					<td id="total_payment">{{current_total|floatformat}}</td>
+				</tr>
+				<tr>
+					<td>备注：</td>
+					<td colspan="6">
+						{% if is_multi_paid %}
+						{% for i in multi_incomes %}
+						{{i.payment_method.name}}: {{i.amount|floatformat}}
+						{% endfor %}
+						{% endif %}
+					</td>
 				</tr>
 			</tbody>
 		</table>

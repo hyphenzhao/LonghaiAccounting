@@ -22,7 +22,7 @@
 					<input type="hidden" name="current_method" id="current_method" value="{{current_method.payment.id}}"/>
 					<label for="payment_method">支付方式：</label>
 						{% for i in methods%}
-						{% if i.id != vip_method.id %}
+						{% if i.id != vip_method.id and i.id != multi_method.id %}
 							{% if i.id == first_method.id %}
 							<button type="button" name="payment_select_button" class="btn btn-lg btn-primary" id="payment_select_button_{{i.id}}" onclick="payment_method_onclick({{i.id}})">{{i.name}}<br></button>
 							{% else %}

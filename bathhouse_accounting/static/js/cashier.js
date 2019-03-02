@@ -1,7 +1,15 @@
 var index = 1;
-function print_and_exit() {
+function print_and_exit(id) {
+	document.body.innerHTML = document.getElementById(id).innerHTML;
 	window.print();
 	window.location.href = "/accounting/logout/";
+}
+function print_not_exit(id) {
+	document.getElementById(id).setAttribute("style","font-size: 9px;");
+	document.body.innerHTML = document.getElementById(id).innerHTML;
+	document.body.setAttribute("style","font-size: 9px;");
+	window.print();
+	window.location.href = "/accounting/cashier/bill/";
 }
 function search_vip() {
 	var vip_no = document.getElementById("vip_no");
@@ -37,19 +45,34 @@ function payment_method_onclick(id) {
 	payment_method.value = id;
 	var selectedButton = document.getElementById("payment_select_button_" + id);
 	selectedButton.setAttribute("class", "btn btn-lg btn-primary");
-	var current_method = document.getElementById("current_method");
-	if(id == current_method.value) {
+	var current_vip_method = document.getElementById("current_vip_method");
+	if(id == current_vip_method.value) {
 		var auth_method = document.getElementById("payment_auth_method");
 		var card_pay = document.getElementById("payment_auth_card");
 		var auth_submit = document.getElementById("payment_auth_method_selection");
+		var multi_method = document.getElementById("payment_multi_method")
+		multi_method.setAttribute("hidden","")
 		auth_method.removeAttribute("hidden");
 		card_pay.removeAttribute("hidden");
 		auth_submit.value = "card";
+	} else if (id == current_multi_method.value) {
+		var auth_method = document.getElementById("payment_auth_method");
+		var card_pay = document.getElementById("payment_auth_card");
+		var phone_pay = document.getElementById("payment_auth_phone");
+		var auth_submit = document.getElementById("payment_auth_method_selection");
+		var multi_method = document.getElementById("payment_multi_method")
+		multi_method.removeAttribute("hidden")
+		auth_method.setAttribute("hidden","");
+		card_pay.setAttribute("hidden","");
+		phone_pay.setAttribute("hidden","");
+		auth_submit.value = "multi";
 	} else {
 		var auth_method = document.getElementById("payment_auth_method");
 		var card_pay = document.getElementById("payment_auth_card");
 		var phone_pay = document.getElementById("payment_auth_phone");
 		var auth_submit = document.getElementById("payment_auth_method_selection");
+		var multi_method = document.getElementById("payment_multi_method")
+		multi_method.setAttribute("hidden","")
 		auth_method.setAttribute("hidden","");
 		card_pay.setAttribute("hidden","");
 		phone_pay.setAttribute("hidden","");
