@@ -6,12 +6,13 @@ import math
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth import authenticate
-from django.utils.timezone import now, timedelta
+from django.utils.timezone import now, timedelta, localtime
 from datetime import datetime
 from .models import *
 from decimal import *
 
 utc=pytz.UTC
+bankok_tz=pytz.timezone("Asia/Bangkok")
 
 def logout(request):
 	del request.session["user_id"]
@@ -87,7 +88,8 @@ def waiter_view(request):
 	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
 	if system_user.role != 'waiter' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
-	start = now().date()
+	# start = now().date()
+	start = datetime.now(tz=bankok_tz).date()
 	end = start + timedelta(days=1)
 	staff = Staff.objects.get(pk=request.session['worker_id'])
 	records = Service.objects.filter(is_deleted=False, income__date__range=(start,end),staff=staff)
@@ -319,7 +321,8 @@ def cashier_daily(request):
 	system_user = SystemUser.objects.filter(user_id=user_id).order_by('-id')[0]
 	if system_user.role != 'cashier' or system_user.is_deleted:
 		return HttpResponseRedirect('/accounting/')
-	start = now().date()
+	# start = now().date()
+	start = datetime.now(tz=bankok_tz).date()
 	end = start + timedelta(days=1)
 	records = Income.objects.filter(date__range=(start, end),is_deleted=False,is_paid=True,recorder=system_user)
 	vip_records = VIPTopupRecord.objects.filter(date__range=(start, end), recorder=system_user)
@@ -999,25 +1002,27 @@ def admin_bill_all(request, period):
 	vip_topup_records = None
 	redirect_url = "/accounting/administrator/bill/"
 	if period == "today":
-		start = now().date()
+		# start = now().date()
+		start = datetime.now(tz=bankok_tz).date()
 		end = start + timedelta(days=1)
 		record = Income.objects.filter(date__range=(start, end),is_deleted=False).order_by('-date')	
 		vip_topup_records = VIPTopupRecord.objects.filter(date__range=(start, end), operation=4)
 	elif period == "yesterday":
-		end = now().date()
+		# end = now().date()
+		end = datetime.now(tz=bankok_tz).date()
 		start = end + timedelta(days=-1)
 		record = Income.objects.filter(date__range=(start, end),is_deleted=False).order_by('-date')
 		vip_topup_records = VIPTopupRecord.objects.filter(date__range=(start, end), operation=4)
 	elif period == "month":
-		month = str(now().year)
-		if now().month < 10:
-			month = month + '-0' + str(now().month)
+		month = str(datetime.now(tz=bankok_tz).year)
+		if datetime.now(tz=bankok_tz).month < 10:
+			month = month + '-0' + str(datetime.now(tz=bankok_tz).month)
 		else:
-			month = month + '-' + str(now().month)
+			month = month + '-' + str(datetime.now(tz=bankok_tz).month)
 		record = Income.objects.filter(is_deleted=False,date__startswith=month).order_by('-date')
 		vip_topup_records = VIPTopupRecord.objects.filter(date__startswith=month, operation=4)
 	elif period == "year":
-		year = now().year
+		year = datetime.now(tz=bankok_tz).year
 		record = Income.objects.filter(date__year=year,is_deleted=False).order_by('-date')
 		vip_topup_records = VIPTopupRecord.objects.filter(date__year=year, operation=4)
 	else:
