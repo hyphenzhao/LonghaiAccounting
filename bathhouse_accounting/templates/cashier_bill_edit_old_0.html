@@ -1,5 +1,5 @@
 {% extends "cashier_base.html" %}
-{% load staticfiles %}
+{% load static %}
 {% block content %}
 <script type="text/javascript">
 	var options_innerHTML = {% for i in items%}"<option value='{{i.id}}'>{{i.name}}</option>" + {% endfor %} "";

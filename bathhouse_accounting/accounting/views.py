@@ -1131,9 +1131,9 @@ def admin_member_staff(request):
 		return HttpResponseRedirect('/accounting/')
 	if request.method == "POST" and "add_element" in request.POST:
 		index_number = request.POST['index_number']
-	 	for i in range(1, int(index_number)):
-	 		staff_name_name = "staff_name_" + str(i)
-	 		if staff_name_name in request.POST:
+		for i in range(1, int(index_number)):
+			staff_name_name = "staff_name_" + str(i)
+			if staff_name_name in request.POST:
 				staff_gender_name = "staff_gender_" + str(i)
 				staff_job_name = "staff_job_" + str(i)
 				staff_salary_name = "staff_salary_" + str(i)
@@ -1171,16 +1171,16 @@ def admin_member_staff(request):
 							role=role,
 						)
 					new_sys_user.save()
-	 	return HttpResponseRedirect('/accounting/administrator/member/staff/')
+		return HttpResponseRedirect('/accounting/administrator/member/staff/')
 	if request.method == "POST" and "delete_element" in request.POST:
 		staff_id = request.POST['staff_no']
-	 	staff = Staff.objects.get(pk=staff_id)
-	 	staff.is_deleted = True
-	 	staff.save()
-	 	staff_sys_user = SystemUser.objects.filter(staff=staff).order_by('-id')[0]
-	 	staff_sys_user.is_deleted = True
-	 	staff_sys_user.save()
-	 	return HttpResponseRedirect('/accounting/administrator/member/staff/')
+		staff = Staff.objects.get(pk=staff_id)
+		staff.is_deleted = True
+		staff.save()
+		staff_sys_user = SystemUser.objects.filter(staff=staff).order_by('-id')[0]
+		staff_sys_user.is_deleted = True
+		staff_sys_user.save()
+		return HttpResponseRedirect('/accounting/administrator/member/staff/')
 	jobs = Job.objects.filter(is_deleted=False)
 	record = Staff.objects.filter(is_deleted=False)
 	context = {
